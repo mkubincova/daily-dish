@@ -1,28 +1,37 @@
 <script setup lang="ts">
-const route = useRoute()
-const config = useRuntimeConfig()
-const authStore = useAuthStore()
+import type { components } from "~~/types/api";
 
-const { data: recipe, error } = await useFetch(
-  `${config.public.apiUrl}/recipes/${route.params.slug}`,
-  { credentials: 'include' as RequestCredentials }
-)
+type RecipeOut = components["schemas"]["RecipeOut"];
 
-if (error.value) {
-  throw createError({ statusCode: 404, statusMessage: 'Recipe not found' })
+const route = useRoute();
+const config = useRuntimeConfig();
+const authStore = useAuthStore();
+
+const { data: recipe, error } = await useFetch<RecipeOut>(
+	`${config.public.apiUrl}/recipes/${route.params.slug}`,
+	{ credentials: "include" as RequestCredentials },
+);
+
+if (error.value || !recipe.value) {
+	throw createError({ statusCode: 404, statusMessage: "Recipe not found" });
 }
 
 const isOwner = computed(() =>
-  authStore.user && recipe.value && authStore.user.id === (recipe.value as any).user_id
-)
+	Boolean(
+		authStore.user &&
+			recipe.value &&
+			authStore.user.id === recipe.value.user_id,
+	),
+);
 
 async function confirmDelete() {
-  if (!confirm('Delete this recipe? This cannot be undone.')) return
-  await $fetch(`${config.public.apiUrl}/recipes/${(recipe.value as any).id}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  })
-  await navigateTo('/me')
+	if (!recipe.value) return;
+	if (!confirm("Delete this recipe? This cannot be undone.")) return;
+	await $fetch(`${config.public.apiUrl}/recipes/${recipe.value.id}`, {
+		method: "DELETE",
+		credentials: "include",
+	});
+	await navigateTo("/me");
 }
 </script>
 
@@ -30,18 +39,18 @@ async function confirmDelete() {
   <div v-if="recipe" class="max-w-2xl mx-auto">
     <!-- Hero image -->
     <img
-      v-if="(recipe as any).image_url"
-      :src="(recipe as any).image_url"
-      :alt="(recipe as any).title"
+      v-if="recipe.image_url"
+      :src="recipe.image_url"
+      :alt="recipe.title"
       class="w-full h-64 sm:h-80 object-cover rounded-xl mb-6"
     />
 
     <!-- Title + owner actions -->
     <div class="flex items-start justify-between gap-4 mb-4">
-      <h1 class="text-3xl font-bold text-gray-900 leading-tight">{{ (recipe as any).title }}</h1>
+      <h1 class="text-3xl font-bold text-gray-900 leading-tight">{{ recipe.title }}</h1>
       <div v-if="isOwner" class="flex gap-2 shrink-0">
         <NuxtLink
-          :to="`/r/${(recipe as any).slug}/edit`"
+          :to="`/r/${recipe.slug}/edit`"
           class="text-sm border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50"
         >
           Edit
@@ -58,22 +67,22 @@ async function confirmDelete() {
 
     <!-- Meta -->
     <div class="text-sm text-gray-500 mb-6 flex flex-wrap gap-4">
-      <span v-if="(recipe as any).servings">{{ (recipe as any).servings }} servings</span>
-      <span v-if="(recipe as any).prep_time_minutes">Prep: {{ (recipe as any).prep_time_minutes }} min</span>
-      <span v-if="(recipe as any).cook_time_minutes">Cook: {{ (recipe as any).cook_time_minutes }} min</span>
-      <span>by {{ (recipe as any).owner.name }}</span>
+      <span v-if="recipe.servings">{{ recipe.servings }} servings</span>
+      <span v-if="recipe.prep_time_minutes">Prep: {{ recipe.prep_time_minutes }} min</span>
+      <span v-if="recipe.cook_time_minutes">Cook: {{ recipe.cook_time_minutes }} min</span>
+      <span>by {{ recipe.owner.name }}</span>
     </div>
 
-    <p v-if="(recipe as any).description" class="text-gray-700 mb-8 text-lg leading-relaxed">
-      {{ (recipe as any).description }}
+    <p v-if="recipe.description" class="text-gray-700 mb-8 text-lg leading-relaxed">
+      {{ recipe.description }}
     </p>
 
     <!-- Ingredients -->
-    <section v-if="(recipe as any).ingredients?.length" class="mb-8">
+    <section v-if="recipe.ingredients?.length" class="mb-8">
       <h2 class="text-xl font-semibold text-gray-900 mb-4">Ingredients</h2>
       <ul class="space-y-2">
         <li
-          v-for="ing in (recipe as any).ingredients"
+          v-for="ing in recipe.ingredients"
           :key="ing.id"
           class="flex gap-3 text-base text-gray-800 leading-relaxed"
         >
@@ -86,12 +95,12 @@ async function confirmDelete() {
     </section>
 
     <!-- Steps -->
-    <section v-if="(recipe as any).steps?.length">
+    <section v-if="recipe.steps?.length">
       <h2 class="text-xl font-semibold text-gray-900 mb-4">Steps</h2>
       <ol class="space-y-6">
         <li
-          v-for="step in (recipe as any).steps"
-          :key="step.position"
+          v-for="step in recipe.steps"
+          :key="String(step.position)"
           class="flex gap-4"
         >
           <span class="text-emerald-600 font-bold text-lg shrink-0 mt-0.5">{{ step.position }}.</span>
@@ -100,8 +109,8 @@ async function confirmDelete() {
       </ol>
     </section>
 
-    <p v-if="(recipe as any).source_url" class="mt-8 text-sm text-gray-400">
-      Source: <a :href="(recipe as any).source_url" class="underline" target="_blank" rel="noopener">{{ (recipe as any).source_url }}</a>
+    <p v-if="recipe.source_url" class="mt-8 text-sm text-gray-400">
+      Source: <a :href="recipe.source_url" class="underline" target="_blank" rel="noopener">{{ recipe.source_url }}</a>
     </p>
   </div>
 </template>

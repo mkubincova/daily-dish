@@ -1,12 +1,16 @@
 <script setup lang="ts">
-definePageMeta({ middleware: 'auth' })
+import type { components } from "~~/types/api";
 
-const config = useRuntimeConfig()
+type RecipeListItem = components["schemas"]["RecipeListItem"];
 
-const { data: recipes, pending, refresh } = await useFetch<any[]>(
-  `${config.public.apiUrl}/recipes/mine`,
-  { credentials: 'include' as RequestCredentials }
-)
+definePageMeta({ middleware: "auth" });
+
+const config = useRuntimeConfig();
+
+const { data: recipes, pending } = await useFetch<RecipeListItem[]>(
+	`${config.public.apiUrl}/recipes/mine`,
+	{ credentials: "include" as RequestCredentials },
+);
 </script>
 
 <template>

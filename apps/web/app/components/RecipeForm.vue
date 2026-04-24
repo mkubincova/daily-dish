@@ -1,138 +1,123 @@
 <script setup lang="ts">
-interface Ingredient {
-  position: number
-  quantity: string
-  unit: string
-  name: string
-  notes: string
-}
+import type { components } from "~~/types/api";
+import type {
+	RecipeFormData,
+	RecipeFormIngredient,
+	RecipeFormStep,
+	RecipeFormSubmitData,
+} from "~~/types/forms";
 
-interface Step {
-  position: number
-  text: string
-}
-
-interface RecipeFormData {
-  title: string
-  description: string
-  servings: number | null
-  prep_time_minutes: number | null
-  cook_time_minutes: number | null
-  source_url: string
-  is_public: boolean
-  image_url: string
-  image_public_id: string
-  ingredients: Ingredient[]
-  steps: Step[]
-}
+type SignedUploadParams = components["schemas"]["SignedUploadParams"];
 
 const props = defineProps<{
-  initial?: Partial<RecipeFormData>
-  submitLabel?: string
-}>()
+	initial?: Partial<RecipeFormData>;
+	submitLabel?: string;
+}>();
 
 const emit = defineEmits<{
-  submit: [data: RecipeFormData]
-}>()
+	submit: [data: RecipeFormSubmitData];
+}>();
 
-const config = useRuntimeConfig()
+const config = useRuntimeConfig();
 
 const form = reactive<RecipeFormData>({
-  title: props.initial?.title ?? '',
-  description: props.initial?.description ?? '',
-  servings: props.initial?.servings ?? null,
-  prep_time_minutes: props.initial?.prep_time_minutes ?? null,
-  cook_time_minutes: props.initial?.cook_time_minutes ?? null,
-  source_url: props.initial?.source_url ?? '',
-  is_public: props.initial?.is_public ?? true,
-  image_url: props.initial?.image_url ?? '',
-  image_public_id: props.initial?.image_public_id ?? '',
-  ingredients: props.initial?.ingredients?.map((i: any) => ({
-    position: i.position,
-    quantity: String(i.quantity ?? ''),
-    unit: i.unit ?? '',
-    name: i.name,
-    notes: i.notes ?? '',
-  })) ?? [{ position: 1, quantity: '', unit: '', name: '', notes: '' }],
-  steps: props.initial?.steps?.map((s: any) => ({
-    position: s.position,
-    text: s.text,
-  })) ?? [{ position: 1, text: '' }],
-})
+	title: props.initial?.title ?? "",
+	description: props.initial?.description ?? "",
+	servings: props.initial?.servings ?? null,
+	prep_time_minutes: props.initial?.prep_time_minutes ?? null,
+	cook_time_minutes: props.initial?.cook_time_minutes ?? null,
+	source_url: props.initial?.source_url ?? "",
+	is_public: props.initial?.is_public ?? true,
+	image_url: props.initial?.image_url ?? "",
+	image_public_id: props.initial?.image_public_id ?? "",
+	ingredients: props.initial?.ingredients?.map(
+		(i: Partial<RecipeFormIngredient>): RecipeFormIngredient => ({
+			position: i.position ?? 0,
+			quantity: String(i.quantity ?? ""),
+			unit: i.unit ?? "",
+			name: i.name ?? "",
+			notes: i.notes ?? "",
+		}),
+	) ?? [{ position: 1, quantity: "", unit: "", name: "", notes: "" }],
+	steps: props.initial?.steps?.map(
+		(s: Partial<RecipeFormStep>): RecipeFormStep => ({
+			position: s.position ?? 0,
+			text: s.text ?? "",
+		}),
+	) ?? [{ position: 1, text: "" }],
+});
 
 function addIngredient() {
-  form.ingredients.push({
-    position: form.ingredients.length + 1,
-    quantity: '',
-    unit: '',
-    name: '',
-    notes: '',
-  })
+	form.ingredients.push({
+		position: form.ingredients.length + 1,
+		quantity: "",
+		unit: "",
+		name: "",
+		notes: "",
+	});
 }
 
 function removeIngredient(index: number) {
-  form.ingredients.splice(index, 1)
-  form.ingredients.forEach((ing, i) => { ing.position = i + 1 })
+	form.ingredients.splice(index, 1);
+	form.ingredients.forEach((ing, i) => {
+		ing.position = i + 1;
+	});
 }
 
 function addStep() {
-  form.steps.push({ position: form.steps.length + 1, text: '' })
+	form.steps.push({ position: form.steps.length + 1, text: "" });
 }
 
 function removeStep(index: number) {
-  form.steps.splice(index, 1)
-  form.steps.forEach((s, i) => { s.position = i + 1 })
+	form.steps.splice(index, 1);
+	form.steps.forEach((s, i) => {
+		s.position = i + 1;
+	});
 }
 
 // Cloudinary upload
-const uploading = ref(false)
-const fileInput = ref<HTMLInputElement | null>(null)
+const uploading = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
 
 async function uploadImage(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  uploading.value = true
-  try {
-    const params = await $fetch<{
-      cloud_name: string
-      api_key: string
-      timestamp: number
-      signature: string
-      folder: string
-    }>(`${config.public.apiUrl}/uploads/sign`, {
-      method: 'POST',
-      credentials: 'include',
-    })
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('api_key', params.api_key)
-    fd.append('timestamp', String(params.timestamp))
-    fd.append('signature', params.signature)
-    fd.append('folder', params.folder)
+	const file = (event.target as HTMLInputElement).files?.[0];
+	if (!file) return;
+	uploading.value = true;
+	try {
+		const params = await $fetch<SignedUploadParams>(
+			`${config.public.apiUrl}/uploads/sign`,
+			{ method: "POST", credentials: "include" },
+		);
+		const fd = new FormData();
+		fd.append("file", file);
+		fd.append("api_key", params.api_key);
+		fd.append("timestamp", String(params.timestamp));
+		fd.append("signature", params.signature);
+		fd.append("folder", params.folder);
 
-    const res = await fetch(
-      `https://api.cloudinary.com/v1_1/${params.cloud_name}/image/upload`,
-      { method: 'POST', body: fd }
-    )
-    const data = await res.json()
-    form.image_url = data.secure_url
-    form.image_public_id = data.public_id
-  } finally {
-    uploading.value = false
-  }
+		const res = await fetch(
+			`https://api.cloudinary.com/v1_1/${params.cloud_name}/image/upload`,
+			{ method: "POST", body: fd },
+		);
+		const data = await res.json();
+		form.image_url = data.secure_url;
+		form.image_public_id = data.public_id;
+	} finally {
+		uploading.value = false;
+	}
 }
 
 function handleSubmit() {
-  const data = {
-    ...form,
-    ingredients: form.ingredients.map(ing => ({
-      ...ing,
-      quantity: ing.quantity === '' ? null : ing.quantity,
-      unit: ing.unit === '' ? null : ing.unit,
-      notes: ing.notes === '' ? null : ing.notes,
-    })),
-  }
-  emit('submit', data as any)
+	const data: RecipeFormSubmitData = {
+		...form,
+		ingredients: form.ingredients.map((ing) => ({
+			...ing,
+			quantity: ing.quantity === "" ? null : ing.quantity,
+			unit: ing.unit === "" ? null : ing.unit,
+			notes: ing.notes === "" ? null : ing.notes,
+		})),
+	};
+	emit("submit", data);
 }
 </script>
 

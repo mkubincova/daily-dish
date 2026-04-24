@@ -1,10 +1,17 @@
 <script setup lang="ts">
-const config = useRuntimeConfig()
+import type { components } from "~~/types/api";
 
-const { data: feed, pending, error } = await useFetch(
-  `${config.public.apiUrl}/recipes`,
-  { credentials: 'include' as RequestCredentials }
-)
+type PaginatedRecipes = components["schemas"]["PaginatedRecipes"];
+
+const config = useRuntimeConfig();
+
+const {
+	data: feed,
+	pending,
+	error,
+} = await useFetch<PaginatedRecipes>(`${config.public.apiUrl}/recipes`, {
+	credentials: "include" as RequestCredentials,
+});
 </script>
 
 <template>
