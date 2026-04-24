@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.utils.uuid7 import new_uuid7
@@ -17,11 +18,26 @@ def _now() -> datetime:
 
 class Recipe(SQLModel, table=True):
     __tablename__ = "recipes"
+    __table_args__ = (
+        sa.UniqueConstraint("slug", name="recipes_slug_unique"),
+        sa.Index("recipes_slug_idx", "slug"),
+        sa.Index(
+            "recipes_public_feed_idx",
+            "created_at",
+            postgresql_where=sa.text("is_public = true AND deleted_at IS NULL"),
+        ),
+        sa.Index(
+            "recipes_owner_idx",
+            "user_id",
+            "created_at",
+            postgresql_where=sa.text("deleted_at IS NULL"),
+        ),
+    )
 
     id: str = Field(default_factory=new_uuid7, primary_key=True)
-    user_id: str = Field(foreign_key="users.id", index=True)
+    user_id: str = Field(foreign_key="users.id")
     title: str
-    slug: str = Field(unique=True, index=True)
+    slug: str
     description: str | None = None
     image_url: str | None = None
     image_public_id: str | None = None
@@ -31,7 +47,11 @@ class Recipe(SQLModel, table=True):
     cook_time_minutes: int | None = None
     steps: list[dict[str, Any]] = Field(
         default_factory=list,
-        sa_column=sa.Column(sa.JSON, nullable=False, server_default="[]"),
+        sa_column=sa.Column(
+            sa.JSON().with_variant(JSONB(), "postgresql"),
+            nullable=False,
+            server_default="[]",
+        ),
     )
     is_public: bool = Field(default=True)
     deleted_at: datetime | None = Field(

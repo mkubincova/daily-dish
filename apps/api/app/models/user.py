@@ -16,9 +16,13 @@ def _now() -> datetime:
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
+    __table_args__ = (
+        sa.Index("users_email_idx", "email"),
+        sa.UniqueConstraint("provider", "provider_id", name="users_provider_id_unique"),
+    )
 
     id: str = Field(default_factory=new_uuid7, primary_key=True)
-    email: str = Field(index=True)
+    email: str
     name: str
     avatar_url: str | None = None
     provider: str

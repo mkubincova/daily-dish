@@ -73,6 +73,7 @@ class IngredientOut(BaseModel):
 
 class RecipeOut(BaseModel):
     id: str
+    user_id: str
     slug: str
     title: str
     description: str | None
@@ -111,6 +112,7 @@ class PaginatedRecipes(BaseModel):
 def _recipe_out(recipe: Recipe, owner: User, ingredients: list[Ingredient]) -> RecipeOut:
     return RecipeOut(
         id=recipe.id,
+        user_id=recipe.user_id,
         slug=recipe.slug,
         title=recipe.title,
         description=recipe.description,

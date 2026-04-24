@@ -44,7 +44,5 @@ async def test_sign_upload_signature_valid(auth_client: AsyncClient, monkeypatch
 
     folder = data["folder"]
     timestamp = data["timestamp"]
-    expected = hashlib.sha1(
-        f"folder={folder}&timestamp={timestamp}mysecret".encode()
-    ).hexdigest()
+    expected = hashlib.sha1(f"folder={folder}&timestamp={timestamp}mysecret".encode()).hexdigest()
     assert data["signature"] == expected

@@ -171,7 +171,9 @@ async def test_mine_requires_auth(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_mine_includes_drafts(auth_client: AsyncClient, session, user: User):
     pub = Recipe(id=new_uuid7(), user_id=user.id, title="Public", slug="pub-mine-1", is_public=True)
-    draft = Recipe(id=new_uuid7(), user_id=user.id, title="Draft", slug="draft-mine-1", is_public=False)
+    draft = Recipe(
+        id=new_uuid7(), user_id=user.id, title="Draft", slug="draft-mine-1", is_public=False
+    )
     session.add(pub)
     session.add(draft)
     await session.commit()
@@ -185,7 +187,9 @@ async def test_mine_includes_drafts(auth_client: AsyncClient, session, user: Use
 
 @pytest.mark.asyncio
 async def test_soft_delete(auth_client: AsyncClient, session, user: User):
-    recipe = Recipe(id=new_uuid7(), user_id=user.id, title="To Delete", slug="to-delete-1", is_public=True)
+    recipe = Recipe(
+        id=new_uuid7(), user_id=user.id, title="To Delete", slug="to-delete-1", is_public=True
+    )
     session.add(recipe)
     await session.commit()
 
@@ -199,7 +203,9 @@ async def test_soft_delete(auth_client: AsyncClient, session, user: User):
 
 @pytest.mark.asyncio
 async def test_non_owner_delete_returns_404(session, other_user: User, user: User):
-    recipe = Recipe(id=new_uuid7(), user_id=user.id, title="Protected", slug="protected-1", is_public=True)
+    recipe = Recipe(
+        id=new_uuid7(), user_id=user.id, title="Protected", slug="protected-1", is_public=True
+    )
     session.add(recipe)
     await session.commit()
 
@@ -227,7 +233,9 @@ async def test_non_owner_delete_returns_404(session, other_user: User, user: Use
 
 @pytest.mark.asyncio
 async def test_update_recipe(auth_client: AsyncClient, session, user: User):
-    recipe = Recipe(id=new_uuid7(), user_id=user.id, title="Old Title", slug="old-title-1", is_public=True)
+    recipe = Recipe(
+        id=new_uuid7(), user_id=user.id, title="Old Title", slug="old-title-1", is_public=True
+    )
     session.add(recipe)
     await session.commit()
 
@@ -238,7 +246,9 @@ async def test_update_recipe(auth_client: AsyncClient, session, user: User):
 
 @pytest.mark.asyncio
 async def test_update_replaces_ingredients(auth_client: AsyncClient, session, user: User):
-    recipe = Recipe(id=new_uuid7(), user_id=user.id, title="Ingredients Test", slug="ing-test-1", is_public=True)
+    recipe = Recipe(
+        id=new_uuid7(), user_id=user.id, title="Ingredients Test", slug="ing-test-1", is_public=True
+    )
     session.add(recipe)
     await session.commit()
 

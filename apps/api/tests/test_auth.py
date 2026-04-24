@@ -64,7 +64,9 @@ async def test_upsert_creates_new_user(session):
     from app.models.user import User
 
     # No user exists yet
-    result = await session.exec(select(User).where(User.provider == "github", User.provider_id == "newuser123"))
+    result = await session.exec(
+        select(User).where(User.provider == "github", User.provider_id == "newuser123")
+    )
     assert result.first() is None
 
     # Create one
@@ -78,20 +80,35 @@ async def test_upsert_creates_new_user(session):
     session.add(u)
     await session.commit()
 
-    result = await session.exec(select(User).where(User.provider == "github", User.provider_id == "newuser123"))
+    result = await session.exec(
+        select(User).where(User.provider == "github", User.provider_id == "newuser123")
+    )
     assert result.first() is not None
 
 
 @pytest.mark.asyncio
 async def test_same_email_different_provider_creates_separate_accounts(session):
     """Accounts are keyed by (provider, provider_id), not email."""
-    u1 = User(id=new_uuid7(), email="shared@example.com", name="User1", provider="github", provider_id="g1")
-    u2 = User(id=new_uuid7(), email="shared@example.com", name="User2", provider="google", provider_id="g2")
+    u1 = User(
+        id=new_uuid7(),
+        email="shared@example.com",
+        name="User1",
+        provider="github",
+        provider_id="g1",
+    )
+    u2 = User(
+        id=new_uuid7(),
+        email="shared@example.com",
+        name="User2",
+        provider="google",
+        provider_id="g2",
+    )
     session.add(u1)
     session.add(u2)
     await session.commit()
 
     from sqlmodel import select
+
     result = await session.exec(select(User).where(User.email == "shared@example.com"))
     users = result.all()
     assert len(users) == 2
