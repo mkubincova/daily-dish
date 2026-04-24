@@ -33,6 +33,9 @@ daily-dish/
 ## Quick start
 
 ```bash
+# Install root tooling (husky hooks, lint-staged)
+npm install
+
 # Start local Postgres
 docker compose up -d
 
@@ -48,6 +51,19 @@ cp .env.example .env
 npm install
 npm run dev            # http://localhost:3000
 ```
+
+## Quality checks
+
+Checks are layered so errors surface as close to the keystroke as possible. Later layers catch anything the earlier ones missed or that was bypassed.
+
+| Layer                    | Trigger                    | Runs                                                                                   |
+| ------------------------ | -------------------------- | -------------------------------------------------------------------------------------- |
+| Claude `PostToolUse`     | After each Edit/Write      | `ruff check --fix` + `ruff format` on `.py`; `biome check --write` on web files        |
+| Husky `pre-commit`       | `git commit`               | `lint-staged` → biome on staged web files, ruff on staged Python files (auto re-stage) |
+| Husky `pre-push`         | `git push`                 | `vue-tsc` typecheck on the frontend                                                    |
+| GitHub Actions (`ci.yml`) | push / PR to `main`        | ruff lint+format, pytest, `alembic upgrade` + `alembic check` (Postgres), biome, typecheck |
+
+Hook activation requires `npm install` at the repo root (Husky's `prepare` script registers `.husky/` as git's hooks path). The Claude `PostToolUse` hook lives in `.claude/hooks/post_edit.sh` and is only active in Claude Code sessions. CI is the enforceable floor — local hooks are skippable (`--no-verify`) and exist to shorten the feedback loop, not to replace the pipeline.
 
 ## Design decisions
 

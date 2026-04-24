@@ -52,6 +52,16 @@ jobs:
           SECRET_KEY: ci-test-secret-key
         run: uv run pytest --tb=short
 
+      - name: Apply migrations (Postgres)
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/daily_dish_test
+        run: uv run alembic upgrade head
+
+      - name: Check for model/migration drift
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/daily_dish_test
+        run: uv run alembic check
+
   web:
     name: Web — lint + codegen
     runs-on: ubuntu-latest
@@ -74,6 +84,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Verify no Cloudinary secret in build output
         run: |

@@ -1,0 +1,13 @@
+{
+  "name": "daily-dish",
+  "private": true,
+  "description": "Monorepo root — hosts git hooks (husky + lint-staged). App packages live under apps/.",
+  "scripts": {
+    "prepare": "husky",
+    "typecheck:web": "npm --prefix apps/web run typecheck"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2"
+  }
+}
