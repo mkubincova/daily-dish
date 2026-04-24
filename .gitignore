@@ -1,0 +1,60 @@
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# --- Python (FastAPI backend, uv, Ruff, Pytest, Alembic) ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+build/
+dist/
+# Keep uv.lock tracked — do NOT ignore.
+
+# --- Node / Nuxt 3 frontend ---
+node_modules/
+.nuxt/
+.output/
+.nitro/
+.cache/
+.data/
+# Vercel local dev
+.vercel/
+# Generic build output (front-of-repo or nested)
+dist/
+
+# --- Tests (Vitest + Playwright) ---
+coverage/
+playwright-report/
+test-results/
+/playwright/.cache/
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# --- Local Postgres via docker-compose ---
+pgdata/
+postgres-data/
+
+# --- Generated / local-only ---
+*.local

@@ -1,0 +1,70 @@
+schema: spec-driven
+
+# Project context shown to AI assistants when creating or editing artifacts.
+# Keep this dense — every line is loaded into context for proposals/specs/tasks.
+context: |
+  Daily Dish is a personal recipe app and portfolio project. One developer (the
+  author is also the primary user). Two intended uses: laptop for planning meals
+  and prepping shopping lists; phone in the kitchen for cooking instructions.
+
+  Backstory: predecessor app used self-hosted Strapi as CMS+DB. Editing recipes
+  through Strapi's admin UI was impractical, which is why the rebuild prioritises
+  direct DB control, code-versioned migrations, and a pleasant editing experience.
+
+  Tech stack
+  ----------
+  Frontend:  Nuxt 3 (Vue 3, SSR), Pinia, Tailwind CSS. Deployed on Vercel.
+  Backend:   FastAPI (Python 3.12+), SQLModel, Pydantic v2, async throughout.
+             uv for package management. Ruff for lint+format. Pytest + httpx for tests.
+             Deployed on Railway.
+  Database:  PostgreSQL on Railway. Migrations via Alembic.
+  Auth:      OAuth (GitHub + Google) via Authlib on the backend.
+             HttpOnly Secure session cookies. SameSite=None cross-origin
+             (or SameSite=Lax if a custom domain pairs `app.` and `api.` subdomains).
+  API:       REST. FastAPI auto-generates OpenAPI; the frontend consumes a typed
+             client built with openapi-typescript at build time.
+  Images:    Cloudinary. Backend signs upload params; browser uploads directly.
+             We store both `image_url` (delivery) and `image_public_id` (for deletion).
+  Frontend tests: Vitest (unit), Playwright (e2e).
+
+  Architectural decisions worth knowing before editing
+  ----------------------------------------------------
+  - Separated frontend + backend (two deploys) is deliberate. The backend is a
+    stable "data product" so future frontend experiments (React, Solid, etc.)
+    can consume the same API. Do not collapse this into a Nuxt monolith.
+  - REST over GraphQL/tRPC. Preserves FastAPI's OpenAPI strength and makes the
+    API trivially consumable by any frontend.
+  - SQLModel over raw SQLAlchemy 2.0. Less ceremony for a small/medium app.
+    Drop to plain SQLAlchemy when a query demands it.
+  - Steps stored as JSONB array on `recipes`; ingredients normalized into their
+    own table (so future "scale recipe" and "find recipes with X" features
+    don't need migrations).
+  - UUIDv7 primary keys (time-orderable, no enumeration leakage).
+  - Soft delete (`deleted_at`) — never hard-delete recipes.
+  - `is_public` boolean on recipes; default true. Drafts visible only to owner.
+  - Source URL column reserved on recipes from day one for future URL-import.
+
+  Hosting and accounts (already provisioned)
+  ------------------------------------------
+  - Vercel account (frontend)
+  - Railway account (backend + Postgres)
+  - Cloudinary account (carried over from the old app)
+  - GitHub + Google OAuth apps will be created during setup.
+
+  Conventions
+  -----------
+  - Conventional commits.
+  - Prefer the simplest thing that satisfies the spec; defer cleverness.
+  - When uncertain about scope, prefer adding a v2 feature to the OpenSpec
+    backlog over expanding the current change.
+
+# Per-artifact rules.
+rules:
+  proposal:
+    - Lead with the problem, not the solution.
+    - Keep the proposal under two pages — defer technical detail to design.md.
+  design:
+    - Every key decision must list at least one alternative considered, with rationale.
+  tasks:
+    - Each task should be completable in a single focused session (~2-4 hours).
+    - Order tasks by dependency: nothing should reference uncreated work.
