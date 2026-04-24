@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 
 onMounted(() => {
-  authStore.fetchMe()
-})
+	authStore.fetchMe();
+});
 </script>
 
 <template>

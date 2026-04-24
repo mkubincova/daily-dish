@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const props = defineProps<{ error: { statusCode: number; statusMessage: string } }>()
+const props = defineProps<{
+	error: { statusCode: number; statusMessage: string };
+}>();
 </script>
 
 <template>
