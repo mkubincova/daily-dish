@@ -23,6 +23,8 @@ export interface RecipeFormData {
 	image_public_id: string;
 	ingredients: RecipeFormIngredient[];
 	steps: RecipeFormStep[];
+	category_item_ids: string[];
+	tag_ids: string[];
 }
 
 export interface RecipeFormSubmitData

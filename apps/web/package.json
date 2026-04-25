@@ -11,7 +11,8 @@
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
 		"typecheck": "nuxi typecheck",
-		"codegen": "openapi-typescript ${NUXT_PUBLIC_API_URL:-http://localhost:8000}/openapi.json -o ./types/api.d.ts"
+		"codegen": "openapi-typescript ${NUXT_PUBLIC_API_URL:-http://localhost:8000}/openapi.json -o ./types/api.d.ts",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@nuxtjs/tailwindcss": "^6.14.0",
@@ -24,7 +25,11 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.13",
+		"@nuxt/test-utils": "^4.0.2",
 		"@types/node": "^25.6.0",
+		"@vue/test-utils": "^2.4.8",
+		"happy-dom": "^20.9.0",
+		"vitest": "^4.1.5",
 		"vue-tsc": "^3.2.7"
 	}
 }

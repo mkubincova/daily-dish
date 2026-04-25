@@ -8,6 +8,7 @@ from sqlmodel import Field, Relationship, SQLModel
 from app.utils.uuid7 import new_uuid7
 
 if TYPE_CHECKING:
+    from app.models.category import RecipeCategoryItem, RecipeTag
     from app.models.ingredient import Ingredient
     from app.models.user import User
 
@@ -69,3 +70,5 @@ class Recipe(SQLModel, table=True):
 
     owner: "User" = Relationship(back_populates="recipes")
     ingredients: list["Ingredient"] = Relationship(back_populates="recipe")
+    category_item_associations: list["RecipeCategoryItem"] = Relationship(back_populates="recipe")
+    tag_associations: list["RecipeTag"] = Relationship(back_populates="recipe")

@@ -8,6 +8,8 @@ import type {
 } from "~~/types/forms";
 
 type SignedUploadParams = components["schemas"]["SignedUploadParams"];
+type Tag = components["schemas"]["TagOut"];
+type Category = components["schemas"]["CategoryOut"];
 
 const props = defineProps<{
 	initial?: Partial<RecipeFormData>;
@@ -20,6 +22,36 @@ const emit = defineEmits<{
 
 const config = useRuntimeConfig();
 
+// ── FE label config (mirrors CategorySidebar) ───────────────────────────────
+
+const ITEM_CONFIG: Record<string, { label: string }> = {
+	soup: { label: "Soup" },
+	salad: { label: "Salad" },
+	main: { label: "Main Course" },
+	side: { label: "Side Dish" },
+	dessert: { label: "Dessert" },
+	snack: { label: "Snack" },
+	light: { label: "Light" },
+	vegetarian: { label: "Vegetarian" },
+	spicy: { label: "Spicy" },
+	hearty: { label: "Hearty" },
+	fried: { label: "Fried" },
+	beef: { label: "Beef" },
+	chicken: { label: "Chicken" },
+	pork: { label: "Pork" },
+	fish: { label: "Fish" },
+	rabbit: { label: "Rabbit" },
+	duck: { label: "Duck" },
+	turkey: { label: "Turkey" },
+	plant_based: { label: "Plant-Based" },
+};
+
+function itemLabel(id: string): string {
+	return ITEM_CONFIG[id]?.label ?? id;
+}
+
+// ── Form state ────────────────────────────────────────────────────────────────
+
 const form = reactive<RecipeFormData>({
 	title: props.initial?.title ?? "",
 	description: props.initial?.description ?? "",
@@ -30,6 +62,8 @@ const form = reactive<RecipeFormData>({
 	is_public: props.initial?.is_public ?? true,
 	image_url: props.initial?.image_url ?? "",
 	image_public_id: props.initial?.image_public_id ?? "",
+	category_item_ids: props.initial?.category_item_ids ?? [],
+	tag_ids: props.initial?.tag_ids ?? [],
 	ingredients: props.initial?.ingredients?.map(
 		(i: Partial<RecipeFormIngredient>): RecipeFormIngredient => ({
 			position: i.position ?? 0,
@@ -47,35 +81,90 @@ const form = reactive<RecipeFormData>({
 	) ?? [{ position: 1, text: "" }],
 });
 
-function addIngredient() {
-	form.ingredients.push({
-		position: form.ingredients.length + 1,
-		quantity: "",
-		unit: "",
-		name: "",
-		notes: "",
-	});
+// ── Categories ────────────────────────────────────────────────────────────────
+
+const { categories, fetch: fetchCategories } = useCategories();
+onMounted(() => fetchCategories());
+
+const sortedCategories = computed<Category[]>(() =>
+	[...categories.value].sort((a, b) => a.id.localeCompare(b.id)),
+);
+
+function toggleCategoryItem(itemId: string) {
+	const idx = form.category_item_ids.indexOf(itemId);
+	if (idx >= 0) {
+		form.category_item_ids.splice(idx, 1);
+	} else {
+		form.category_item_ids.push(itemId);
+	}
 }
 
-function removeIngredient(index: number) {
-	form.ingredients.splice(index, 1);
-	form.ingredients.forEach((ing, i) => {
-		ing.position = i + 1;
-	});
+// ── Tags ──────────────────────────────────────────────────────────────────────
+
+const { tags, ensureLoaded: ensureTags, createTag } = useTags();
+onMounted(() => ensureTags());
+
+const tagQuery = ref("");
+const tagDropdownOpen = ref(false);
+const tagError = ref<string | null>(null);
+
+const selectedTags = computed<Tag[]>(() =>
+	tags.value.filter((t) => form.tag_ids.includes(t.id)),
+);
+
+const filteredSuggestions = computed<Tag[]>(() => {
+	const q = tagQuery.value.trim().toLowerCase();
+	if (!q) return [];
+	return tags.value
+		.filter((t) => t.name.includes(q) && !form.tag_ids.includes(t.id))
+		.slice(0, 8);
+});
+
+const exactMatch = computed(() => {
+	const q = tagQuery.value.trim().toLowerCase();
+	return tags.value.some((t) => t.name === q);
+});
+
+const showCreateOption = computed(() => {
+	const q = tagQuery.value.trim();
+	return q.length > 0 && !exactMatch.value;
+});
+
+function selectTag(tag: Tag) {
+	if (!form.tag_ids.includes(tag.id)) {
+		form.tag_ids.push(tag.id);
+	}
+	tagQuery.value = "";
+	tagDropdownOpen.value = false;
 }
 
-function addStep() {
-	form.steps.push({ position: form.steps.length + 1, text: "" });
+function removeTag(tagId: string) {
+	const idx = form.tag_ids.indexOf(tagId);
+	if (idx >= 0) form.tag_ids.splice(idx, 1);
 }
 
-function removeStep(index: number) {
-	form.steps.splice(index, 1);
-	form.steps.forEach((s, i) => {
-		s.position = i + 1;
-	});
+function scheduleCloseDropdown() {
+	setTimeout(() => {
+		tagDropdownOpen.value = false;
+	}, 150);
 }
 
-// Cloudinary upload
+async function handleCreateTag() {
+	const name = tagQuery.value.trim();
+	if (!name) return;
+	tagError.value = null;
+	try {
+		const tag = await createTag(name);
+		form.tag_ids.push(tag.id);
+		tagQuery.value = "";
+		tagDropdownOpen.value = false;
+	} catch {
+		tagError.value = "Failed to create tag. Try again.";
+	}
+}
+
+// ── Image upload ──────────────────────────────────────────────────────────────
+
 const uploading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -106,6 +195,38 @@ async function uploadImage(event: Event) {
 		uploading.value = false;
 	}
 }
+
+// ── Ingredients / steps ───────────────────────────────────────────────────────
+
+function addIngredient() {
+	form.ingredients.push({
+		position: form.ingredients.length + 1,
+		quantity: "",
+		unit: "",
+		name: "",
+		notes: "",
+	});
+}
+
+function removeIngredient(index: number) {
+	form.ingredients.splice(index, 1);
+	form.ingredients.forEach((ing, i) => {
+		ing.position = i + 1;
+	});
+}
+
+function addStep() {
+	form.steps.push({ position: form.steps.length + 1, text: "" });
+}
+
+function removeStep(index: number) {
+	form.steps.splice(index, 1);
+	form.steps.forEach((s, i) => {
+		s.position = i + 1;
+	});
+}
+
+// ── Submit ────────────────────────────────────────────────────────────────────
 
 function handleSubmit() {
 	const data: RecipeFormSubmitData = {
@@ -222,6 +343,91 @@ function handleSubmit() {
       >
         {{ uploading ? 'Uploading…' : form.image_url ? 'Change Image' : 'Upload Image' }}
       </button>
+    </div>
+
+    <!-- Categories -->
+    <div v-if="sortedCategories.length > 0">
+      <h3 class="text-base font-semibold text-gray-900 mb-3">Categories</h3>
+      <div class="space-y-3">
+        <div v-for="cat in sortedCategories" :key="cat.id">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+            {{ cat.id.replace('_', ' ') }}
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="item in [...cat.items].sort((a, b) => itemLabel(a.id).localeCompare(itemLabel(b.id)))"
+              :key="item.id"
+              type="button"
+              class="px-3 py-1 rounded-full text-sm border transition-colors"
+              :class="form.category_item_ids.includes(item.id)
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-emerald-400'"
+              @click="toggleCategoryItem(item.id)"
+            >
+              {{ itemLabel(item.id) }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tags -->
+    <div>
+      <h3 class="text-base font-semibold text-gray-900 mb-3">Tags</h3>
+
+      <!-- Selected tags -->
+      <div v-if="selectedTags.length > 0" class="flex flex-wrap gap-2 mb-3">
+        <span
+          v-for="tag in selectedTags"
+          :key="tag.id"
+          class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-violet-100 text-violet-700"
+        >
+          {{ tag.name }}
+          <button
+            type="button"
+            class="text-violet-400 hover:text-violet-700 leading-none"
+            @click="removeTag(tag.id)"
+          >
+            ×
+          </button>
+        </span>
+      </div>
+
+      <!-- Typeahead input -->
+      <div class="relative">
+        <input
+          v-model="tagQuery"
+          type="text"
+          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+          placeholder="Search or add tag…"
+          autocomplete="off"
+          @focus="tagDropdownOpen = true"
+          @blur="scheduleCloseDropdown"
+        />
+        <div
+          v-if="tagDropdownOpen && (filteredSuggestions.length > 0 || showCreateOption)"
+          class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto"
+        >
+          <button
+            v-for="tag in filteredSuggestions"
+            :key="tag.id"
+            type="button"
+            class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+            @click="selectTag(tag)"
+          >
+            {{ tag.name }}
+          </button>
+          <button
+            v-if="showCreateOption"
+            type="button"
+            class="w-full text-left px-3 py-2 text-sm text-violet-600 hover:bg-violet-50 border-t border-gray-100"
+            @click="handleCreateTag"
+          >
+            Create "{{ tagQuery.trim() }}"
+          </button>
+        </div>
+      </div>
+      <p v-if="tagError" class="mt-1 text-sm text-red-600">{{ tagError }}</p>
     </div>
 
     <!-- Ingredients -->

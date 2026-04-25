@@ -1,6 +1,4 @@
-# Spec — recipes
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Create recipe
 
@@ -76,18 +74,6 @@ only — recipe update SHALL NOT create new tags.
   page (anonymous requests return 404), but remains visible in the owner's
   own recipe list
 
-### Requirement: Soft-delete recipe
-
-The system SHALL allow the owner of a recipe to soft-delete it by setting
-`deleted_at` to the current timestamp. Soft-deleted recipes SHALL be
-excluded from all listings and detail responses, including the owner's own.
-Soft-deleted recipes SHALL NOT be hard-deleted by v1 application code.
-
-#### Scenario: Owner soft-deletes a recipe
-- **WHEN** the owner issues a delete request for their recipe
-- **THEN** the system sets `deleted_at`, returns HTTP 204, and subsequent
-  requests for the recipe (by anyone, including the owner) return HTTP 404
-
 ### Requirement: View recipe detail
 
 The system SHALL serve recipe detail pages identified by slug. A recipe
@@ -150,111 +136,7 @@ be `created_at` descending.
   reverse-chronological order, including for each recipe its attached
   category-item ids and attached tag ids
 
-### Requirement: Structured ingredients
-
-The system SHALL store recipe ingredients as rows in a dedicated
-`ingredients` table with the following structure: `recipe_id` (foreign key
-to recipes), `position` (integer for ordering), `quantity` (numeric,
-nullable), `unit` (text, nullable), `name` (text, required), and `notes`
-(text, nullable).
-
-#### Scenario: Ingredient with quantity and unit
-- **WHEN** an ingredient is stored with quantity 1.5, unit "cups", name
-  "all-purpose flour"
-- **THEN** the system persists those values in their respective columns and
-  returns them on read in the same shape
-
-#### Scenario: Free-form ingredient without quantity
-- **WHEN** an ingredient is stored with only a name (e.g. "salt to taste")
-  and no quantity or unit
-- **THEN** the system persists the row with quantity and unit as null
-
-#### Scenario: Ingredients returned in order
-- **WHEN** a recipe with multiple ingredients is read
-- **THEN** the ingredients SHALL be returned ordered by `position` ascending
-
-### Requirement: Steps stored as JSONB array
-
-The system SHALL store recipe steps as a JSONB array on the `recipes`
-table. Each step SHALL be an object with at minimum a `position` integer
-and a `text` string. Updates SHALL replace the entire array atomically.
-
-#### Scenario: Steps preserved in order
-- **WHEN** a recipe is created with steps in a given order
-- **THEN** the system persists them in that order and returns them in the
-  same order on subsequent reads
-
-#### Scenario: Editing replaces the full step list
-- **WHEN** the owner submits an update containing a new steps array
-- **THEN** the system replaces the previous steps with the new array
-  atomically; partial-step updates are not supported
-
-### Requirement: Image upload via Cloudinary signed parameters
-
-The system SHALL provide an authenticated endpoint that returns Cloudinary
-signed upload parameters (timestamp, signature, upload preset, and any
-required public params). The Cloudinary API secret SHALL never leave the
-backend. After the browser uploads directly to Cloudinary, the frontend
-SHALL pass the resulting `secure_url` and `public_id` back to the backend
-when creating or updating the recipe, where they are stored as `image_url`
-and `image_public_id`.
-
-#### Scenario: Authenticated user requests upload signature
-- **WHEN** an authenticated user requests upload signing parameters
-- **THEN** the system generates a fresh signature server-side using the
-  Cloudinary API secret and returns the signed parameters to the client
-
-#### Scenario: Unauthenticated user requests upload signature
-- **WHEN** an unauthenticated request hits the upload-sign endpoint
-- **THEN** the system responds with HTTP 401
-
-#### Scenario: Recipe update persists Cloudinary image data
-- **WHEN** the owner updates a recipe with `image_url` and
-  `image_public_id` from a successful Cloudinary upload
-- **THEN** the system stores both fields on the recipe and returns them on
-  subsequent reads
-
-### Requirement: Owner identity in public responses
-
-The system SHALL identify a recipe's owner in publicly visible API responses
-(recipe list, recipe detail) using only the owner's `name` (display name)
-and `avatar_url`. The owner's `email` SHALL NOT appear in any response
-returned to a user other than the owner themselves.
-
-#### Scenario: Anonymous viewer reads a public recipe
-- **WHEN** an anonymous request retrieves a public recipe
-- **THEN** the response includes `owner.name` and `owner.avatar_url` but
-  does not include `owner.email`
-
-#### Scenario: Authenticated non-owner reads someone else's public recipe
-- **WHEN** a signed-in user retrieves a public recipe owned by a different
-  user
-- **THEN** the response includes the other user's `name` and `avatar_url`
-  but does not include their `email`
-
-#### Scenario: Owner reads their own recipe
-- **WHEN** the owner retrieves a recipe they own
-- **THEN** the response includes the owner identity in the same shape
-  (`name`, `avatar_url`); the owner can fetch their own email via
-  `GET /auth/me`, not from the recipe payload
-
-### Requirement: Source URL field reserved for future import
-
-The system SHALL include a `source_url` text column (nullable) on recipes
-from the initial schema. Owners MAY populate this field manually in v1 to
-record where a recipe came from. Future URL-import features will populate
-this field automatically without requiring a schema change.
-
-#### Scenario: Owner manually sets source URL on create
-- **WHEN** the owner creates a recipe with a `source_url` value
-- **THEN** the system persists and returns that URL on the recipe
-
-#### Scenario: Recipe with no source URL
-
-- **WHEN** the owner creates or updates a recipe without setting
-  `source_url`
-- **THEN** the system stores `source_url` as null and the field is omitted
-  or null in responses
+## ADDED Requirements
 
 ### Requirement: Filter recipe lists by category items and tags
 

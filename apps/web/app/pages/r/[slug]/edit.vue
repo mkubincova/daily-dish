@@ -31,6 +31,8 @@ const initial = computed<Partial<RecipeFormData> | undefined>(() => {
 		is_public: r.is_public,
 		image_url: r.image_url ?? "",
 		image_public_id: r.image_public_id ?? "",
+		category_item_ids: r.category_items.map((c) => c.id),
+		tag_ids: r.tags.map((t) => t.id),
 		ingredients: r.ingredients.map((ing, idx) => ({
 			position: ing.position ?? idx + 1,
 			quantity: ing.quantity ?? "",

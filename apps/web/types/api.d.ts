@@ -72,6 +72,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Categories */
+        get: operations["list_categories_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tags */
+        get: operations["list_tags_tags_get"];
+        put?: never;
+        /** Create Tag */
+        post: operations["create_tag_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/recipes": {
         parameters: {
             query?: never;
@@ -180,6 +215,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** CategoryOut */
+        CategoryOut: {
+            /** Id */
+            id: string;
+            /** Items */
+            items: components["schemas"]["app__routers__categories__CategoryItemOut"][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -266,6 +308,16 @@ export interface components {
              * @default []
              */
             ingredients: components["schemas"]["IngredientIn"][];
+            /**
+             * Category Item Ids
+             * @default []
+             */
+            category_item_ids: string[];
+            /**
+             * Tag Ids
+             * @default []
+             */
+            tag_ids: string[];
         };
         /** RecipeListItem */
         RecipeListItem: {
@@ -287,6 +339,10 @@ export interface components {
              */
             created_at: string;
             owner: components["schemas"]["OwnerPublic"];
+            /** Category Item Ids */
+            category_item_ids: string[];
+            /** Tag Ids */
+            tag_ids: string[];
         };
         /** RecipeOut */
         RecipeOut: {
@@ -331,6 +387,10 @@ export interface components {
             owner: components["schemas"]["OwnerPublic"];
             /** Ingredients */
             ingredients: components["schemas"]["IngredientOut"][];
+            /** Category Items */
+            category_items: components["schemas"]["app__routers__recipes__CategoryItemOut"][];
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
         };
         /** RecipePatch */
         RecipePatch: {
@@ -358,6 +418,10 @@ export interface components {
             is_public?: boolean | null;
             /** Ingredients */
             ingredients?: components["schemas"]["IngredientIn"][] | null;
+            /** Category Item Ids */
+            category_item_ids?: string[] | null;
+            /** Tag Ids */
+            tag_ids?: string[] | null;
         };
         /** SignedUploadParams */
         SignedUploadParams: {
@@ -371,6 +435,18 @@ export interface components {
             signature: string;
             /** Folder */
             folder: string;
+        };
+        /** TagIn */
+        TagIn: {
+            /** Name */
+            name: string;
+        };
+        /** TagOut */
+        TagOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** UserPublic */
         UserPublic: {
@@ -397,6 +473,18 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** CategoryItemOut */
+        app__routers__categories__CategoryItemOut: {
+            /** Id */
+            id: string;
+        };
+        /** CategoryItemOut */
+        app__routers__recipes__CategoryItemOut: {
+            /** Id */
+            id: string;
+            /** Category Id */
+            category_id: string;
         };
     };
     responses: never;
@@ -522,11 +610,88 @@ export interface operations {
             };
         };
     };
+    list_categories_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"][];
+                };
+            };
+        };
+    };
+    list_tags_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
+                };
+            };
+        };
+    };
+    create_tag_tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_recipes_recipes_get: {
         parameters: {
             query?: {
                 page?: number;
                 page_size?: number;
+                category_items?: string[];
+                tags?: string[];
             };
             header?: never;
             path?: never;
@@ -659,7 +824,11 @@ export interface operations {
     };
     list_mine_recipes_mine_get: {
         parameters: {
-            query?: never;
+            query?: {
+                category_items?: string[];
+                tags?: string[];
+                status?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
