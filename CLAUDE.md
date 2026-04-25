@@ -28,6 +28,7 @@ This project is spec-driven. Before writing non-trivial code, check for an activ
 - **Current change:** `openspec/changes/add-v1-mvp/` (proposal, design, tasks, specs).
 - **Invoke OpenSpec skills** (`openspec-propose`, `openspec-explore`, `openspec-apply-change`, `openspec-archive-change`) for change lifecycle work — don't hand-edit spec artifacts ad hoc.
 - **Scope discipline:** when uncertain whether something belongs in the current change, prefer adding a v2 item to the backlog over expanding scope.
+- **Migrations:** whenever a task creates or modifies an Alembic migration file, immediately run `cd apps/api && uv run alembic upgrade head` against the local database before marking the task done, so the schema is ready for manual testing.
 
 ## Conventions
 
