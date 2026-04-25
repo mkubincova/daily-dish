@@ -45,6 +45,7 @@ coverage/
 playwright-report/
 test-results/
 /playwright/.cache/
+test.db
 
 # --- Logs ---
 *.log
