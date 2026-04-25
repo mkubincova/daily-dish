@@ -13,6 +13,7 @@ const authStore = useAuthStore();
           <NuxtLink to="/" class="text-sm text-gray-600 hover:text-gray-900">Recipes</NuxtLink>
           <template v-if="authStore.isAuthenticated">
             <NuxtLink to="/me" class="text-sm text-gray-600 hover:text-gray-900">My Recipes</NuxtLink>
+            <NuxtLink to="/favorites" class="text-sm text-gray-600 hover:text-gray-900">Favorites</NuxtLink>
             <NuxtLink to="/r/new" class="text-sm bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700">
               New Recipe
             </NuxtLink>

@@ -3,6 +3,8 @@ import type { components } from "~~/types/api";
 
 type PaginatedRecipes = components["schemas"]["PaginatedRecipes"];
 
+definePageMeta({ middleware: "auth" });
+
 const config = useRuntimeConfig();
 const route = useRoute();
 const { toApiParams } = useRecipeFilters();
@@ -11,12 +13,14 @@ const favoritesStore = useFavoritesStore();
 const {
 	data: feed,
 	pending,
-	error,
 	refresh,
-} = await useFetch<PaginatedRecipes>(`${config.public.apiUrl}/recipes`, {
-	credentials: "include" as RequestCredentials,
-	query: computed(() => toApiParams()),
-});
+} = await useFetch<PaginatedRecipes>(
+	`${config.public.apiUrl}/users/me/favorites`,
+	{
+		credentials: "include" as RequestCredentials,
+		query: computed(() => toApiParams()),
+	},
+);
 
 watch(
 	() => route.query,
@@ -36,11 +40,15 @@ watch(
   <div class="flex gap-8">
     <CategorySidebar />
     <div class="flex-1 min-w-0">
-      <h1 class="text-2xl font-bold text-gray-900 mb-6">Recipes</h1>
+      <h1 class="text-2xl font-bold text-gray-900 mb-6">Favorites</h1>
 
       <div v-if="pending" class="text-gray-500">Loading…</div>
-      <div v-else-if="error" class="text-red-600">Failed to load recipes.</div>
-      <div v-else-if="feed?.items?.length === 0" class="text-gray-500">No recipes found.</div>
+      <div v-else-if="feed?.items?.length === 0" class="text-center py-16 text-gray-400">
+        <p class="text-lg mb-2">No favorites yet.</p>
+        <p class="text-sm">
+          Browse <NuxtLink to="/" class="text-emerald-600 hover:underline">recipes</NuxtLink> and tap the heart to save them here.
+        </p>
+      </div>
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
           v-for="recipe in feed?.items"

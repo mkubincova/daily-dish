@@ -11,6 +11,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.database import get_session
 from app.deps import get_current_user, get_current_user_optional
 from app.models.category import CategoryItem, RecipeCategoryItem, RecipeTag, Tag
+from app.models.favorite import UserFavorite
 from app.models.ingredient import Ingredient
 from app.models.recipe import Recipe
 from app.models.user import User
@@ -106,6 +107,7 @@ class RecipeOut(BaseModel):
     ingredients: list[IngredientOut]
     category_items: list[CategoryItemOut]
     tags: list[TagOut]
+    is_favorited: bool | None = None
 
 
 class RecipeListItem(BaseModel):
@@ -119,6 +121,7 @@ class RecipeListItem(BaseModel):
     owner: OwnerPublic
     category_item_ids: list[str]
     tag_ids: list[str]
+    is_favorited: bool | None = None
 
 
 class PaginatedRecipes(BaseModel):
@@ -128,12 +131,17 @@ class PaginatedRecipes(BaseModel):
     page_size: int
 
 
+class FavoriteOut(BaseModel):
+    is_favorited: bool
+
+
 def _recipe_out(
     recipe: Recipe,
     owner: User,
     ingredients: list[Ingredient],
     category_assocs: list[RecipeCategoryItem],
     tag_assocs: list[tuple[RecipeTag, Tag]],
+    is_favorited: bool | None = None,
 ) -> RecipeOut:
     return RecipeOut(
         id=recipe.id,
@@ -168,6 +176,7 @@ def _recipe_out(
             for a in category_assocs
         ],
         tags=[TagOut(id=rt.tag_id, name=tag.name) for rt, tag in tag_assocs],
+        is_favorited=is_favorited,
     )
 
 
@@ -397,6 +406,20 @@ async def _batch_load_associations(
     return cat_map, tag_map
 
 
+async def _batch_load_favorites(
+    session: AsyncSession, user_id: str, recipe_ids: list[str]
+) -> set[str]:
+    if not recipe_ids:
+        return set()
+    result = await session.exec(
+        select(UserFavorite.recipe_id).where(  # type: ignore[attr-defined]
+            UserFavorite.user_id == user_id,
+            UserFavorite.recipe_id.in_(recipe_ids),  # type: ignore[attr-defined]
+        )
+    )
+    return set(result.all())
+
+
 def _filter_clauses(
     category_item_params: list[str],
     tag_params: list[str],
@@ -430,6 +453,45 @@ def _filter_clauses(
     return clauses
 
 
+@router.post("/{recipe_id}/favorite", response_model=FavoriteOut)
+async def add_favorite(
+    recipe_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> FavoriteOut:
+    result = await session.exec(
+        select(Recipe).where(Recipe.id == recipe_id, Recipe.deleted_at.is_(None))  # type: ignore[union-attr]
+    )
+    if result.first() is None:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    existing = await session.exec(
+        select(UserFavorite).where(
+            UserFavorite.user_id == current_user.id,
+            UserFavorite.recipe_id == recipe_id,
+        )
+    )
+    if existing.first() is None:
+        session.add(UserFavorite(user_id=current_user.id, recipe_id=recipe_id))
+        await session.commit()
+    return FavoriteOut(is_favorited=True)
+
+
+@router.delete("/{recipe_id}/favorite", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_favorite(
+    recipe_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    await session.exec(  # type: ignore[arg-type]
+        delete(UserFavorite).where(
+            UserFavorite.user_id == current_user.id,
+            UserFavorite.recipe_id == recipe_id,
+        )
+    )
+    await session.commit()
+
+
 @router.get("/mine", response_model=list[RecipeListItem])
 async def list_mine(
     current_user: Annotated[User, Depends(get_current_user)],
@@ -449,14 +511,13 @@ async def list_mine(
 
     conditions.extend(_filter_clauses(category_items, tags))
 
-    stmt = (
-        select(Recipe).where(*conditions).order_by(Recipe.created_at.desc())  # type: ignore[union-attr]
-    )
+    stmt = select(Recipe).where(*conditions).order_by(Recipe.created_at.desc())  # type: ignore[union-attr]
     result = await session.exec(stmt)
     recipes = list(result.all())
 
     recipe_ids = [r.id for r in recipes]
     cat_map, tag_map = await _batch_load_associations(session, recipe_ids)
+    fav_set = await _batch_load_favorites(session, current_user.id, recipe_ids)
 
     owner = OwnerPublic(name=current_user.name, avatar_url=current_user.avatar_url)
     return [
@@ -471,6 +532,7 @@ async def list_mine(
             owner=owner,
             category_item_ids=cat_map.get(r.id, []),
             tag_ids=tag_map.get(r.id, []),
+            is_favorited=r.id in fav_set,
         )
         for r in recipes
     ]
@@ -479,6 +541,7 @@ async def list_mine(
 @router.get("", response_model=PaginatedRecipes)
 async def list_recipes(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User | None, Depends(get_current_user_optional)],
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=PAGE_SIZE, ge=1, le=100),
     category_items: list[str] = Query(default=[]),
@@ -505,6 +568,9 @@ async def list_recipes(
 
     recipe_ids = [r.id for r in recipes]
     cat_map, tag_map = await _batch_load_associations(session, recipe_ids)
+    fav_set = (
+        await _batch_load_favorites(session, current_user.id, recipe_ids) if current_user else set()
+    )
 
     items = []
     for r in recipes:
@@ -524,6 +590,7 @@ async def list_recipes(
                 ),
                 category_item_ids=cat_map.get(r.id, []),
                 tag_ids=tag_map.get(r.id, []),
+                is_favorited=r.id in fav_set if current_user else None,
             )
         )
 
@@ -551,4 +618,15 @@ async def get_recipe(
     ingredients = await _load_ingredients(session, recipe.id)
     category_assocs = await _load_category_assocs(session, recipe.id)
     tag_assocs = await _load_tag_assocs(session, recipe.id)
-    return _recipe_out(recipe, owner, ingredients, category_assocs, tag_assocs)
+
+    is_favorited: bool | None = None
+    if current_user:
+        fav = await session.exec(
+            select(UserFavorite).where(
+                UserFavorite.user_id == current_user.id,
+                UserFavorite.recipe_id == recipe.id,
+            )
+        )
+        is_favorited = fav.first() is not None
+
+    return _recipe_out(recipe, owner, ingredients, category_assocs, tag_assocs, is_favorited)

@@ -7,10 +7,14 @@ const route = useRoute();
 const config = useRuntimeConfig();
 const authStore = useAuthStore();
 
+const favoritesStore = useFavoritesStore();
+
 const { data: recipe, error } = await useFetch<RecipeOut>(
 	`${config.public.apiUrl}/recipes/${route.params.slug}`,
 	{ credentials: "include" as RequestCredentials },
 );
+
+if (recipe.value) favoritesStore.seed([recipe.value]);
 
 if (error.value || !recipe.value) {
 	throw createError({ statusCode: 404, statusMessage: "Recipe not found" });
@@ -47,7 +51,10 @@ async function confirmDelete() {
 
     <!-- Title + owner actions -->
     <div class="flex items-start justify-between gap-4 mb-4">
-      <h1 class="text-3xl font-bold text-gray-900 leading-tight">{{ recipe.title }}</h1>
+      <div class="flex items-start gap-3 min-w-0">
+        <h1 class="text-3xl font-bold text-gray-900 leading-tight">{{ recipe.title }}</h1>
+        <FavoriteButton :recipe-id="recipe.id" />
+      </div>
       <div v-if="isOwner" class="flex gap-2 shrink-0">
         <NuxtLink
           :to="`/r/${recipe.slug}/edit`"
