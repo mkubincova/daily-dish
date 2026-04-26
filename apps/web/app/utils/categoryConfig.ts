@@ -79,7 +79,7 @@ export function accentColorForRecipe(
 	for (const id of categoryItemIds) {
 		if (DISH_TYPE_COLORS[id]) return DISH_TYPE_COLORS[id];
 	}
-	return ACCENT_FALLBACK[index % ACCENT_FALLBACK.length]!;
+	return ACCENT_FALLBACK[index % ACCENT_FALLBACK.length] ?? "";
 }
 
 export function itemIcon(id: string): string {

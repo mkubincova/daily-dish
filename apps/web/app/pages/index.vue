@@ -39,7 +39,7 @@ const tagMap = computed(
 );
 
 function tagIds(recipe: Recipe): string[] {
-	return (recipe as any).tag_ids ?? [];
+	return recipe.tag_ids ?? [];
 }
 
 function recipeTags(recipe: Recipe): string[] {
