@@ -135,6 +135,14 @@ class FavoriteOut(BaseModel):
     is_favorited: bool
 
 
+class TrashedRecipeItem(BaseModel):
+    id: str
+    slug: str
+    title: str
+    image_url: str | None
+    deleted_at: datetime
+
+
 def _recipe_out(
     recipe: Recipe,
     owner: User,
@@ -336,6 +344,8 @@ async def update_recipe(
     if recipe is None:
         raise HTTPException(status_code=404, detail="Not found")
 
+    old_image_public_id = recipe.image_public_id
+
     update_data = body.model_dump(exclude_unset=True)
     ingredients_data = update_data.pop("ingredients", None)
     category_item_ids = update_data.pop("category_item_ids", None)
@@ -358,6 +368,13 @@ async def update_recipe(
         )
 
     await session.commit()
+
+    new_image_public_id = update_data.get("image_public_id")
+    if old_image_public_id and new_image_public_id and new_image_public_id != old_image_public_id:
+        from app.routers.uploads import _destroy_cloudinary_image
+
+        await _destroy_cloudinary_image(old_image_public_id)
+
     await session.refresh(recipe)
     owner = await session.get(User, recipe.user_id)
     ingredients = await _load_ingredients(session, recipe.id)
@@ -492,6 +509,59 @@ async def remove_favorite(
     await session.commit()
 
 
+@router.post("/{recipe_id}/restore", response_model=RecipeOut)
+async def restore_recipe(
+    recipe_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> RecipeOut:
+    result = await session.exec(select(Recipe).where(Recipe.id == recipe_id))
+    recipe = result.first()
+    if recipe is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    if recipe.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    if recipe.deleted_at is None:
+        raise HTTPException(status_code=409, detail="Recipe is not deleted")
+    recipe.deleted_at = None
+    recipe.updated_at = datetime.now(UTC)
+    session.add(recipe)
+    await session.commit()
+    await session.refresh(recipe)
+    owner = await session.get(User, recipe.user_id)
+    ingredients = await _load_ingredients(session, recipe.id)
+    category_assocs = await _load_category_assocs(session, recipe.id)
+    tag_assocs = await _load_tag_assocs(session, recipe.id)
+    return _recipe_out(recipe, owner, ingredients, category_assocs, tag_assocs)  # type: ignore[arg-type]
+
+
+@router.delete("/{recipe_id}/permanent", status_code=status.HTTP_204_NO_CONTENT)
+async def permanently_delete_recipe(
+    recipe_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    result = await session.exec(select(Recipe).where(Recipe.id == recipe_id))
+    recipe = result.first()
+    if recipe is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    if recipe.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    if recipe.deleted_at is None:
+        raise HTTPException(status_code=409, detail="Recipe is not in trash")
+    image_public_id = recipe.image_public_id
+    await session.exec(delete(Ingredient).where(Ingredient.recipe_id == recipe_id))  # type: ignore[arg-type]
+    await session.exec(delete(RecipeCategoryItem).where(RecipeCategoryItem.recipe_id == recipe_id))  # type: ignore[arg-type]
+    await session.exec(delete(RecipeTag).where(RecipeTag.recipe_id == recipe_id))  # type: ignore[arg-type]
+    await session.exec(delete(UserFavorite).where(UserFavorite.recipe_id == recipe_id))  # type: ignore[arg-type]
+    await session.exec(delete(Recipe).where(Recipe.id == recipe_id))  # type: ignore[arg-type]
+    await session.commit()
+    if image_public_id:
+        from app.routers.uploads import _destroy_cloudinary_image
+
+        await _destroy_cloudinary_image(image_public_id)
+
+
 @router.get("/mine", response_model=list[RecipeListItem])
 async def list_mine(
     current_user: Annotated[User, Depends(get_current_user)],
@@ -595,6 +665,33 @@ async def list_recipes(
         )
 
     return PaginatedRecipes(items=items, total=total, page=page, page_size=page_size)
+
+
+@router.get("/trashed", response_model=list[TrashedRecipeItem])
+async def list_trashed(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> list[TrashedRecipeItem]:
+    stmt = (
+        select(Recipe)
+        .where(
+            Recipe.user_id == current_user.id,
+            Recipe.deleted_at.is_not(None),  # type: ignore[union-attr]
+        )
+        .order_by(Recipe.deleted_at.desc())  # type: ignore[union-attr]
+    )
+    result = await session.exec(stmt)
+    recipes = list(result.all())
+    return [
+        TrashedRecipeItem(
+            id=r.id,
+            slug=r.slug,
+            title=r.title,
+            image_url=r.image_url,
+            deleted_at=r.deleted_at,  # type: ignore[arg-type]
+        )
+        for r in recipes
+    ]
 
 
 @router.get("/{slug}", response_model=RecipeOut)

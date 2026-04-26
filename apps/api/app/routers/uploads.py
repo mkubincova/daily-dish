@@ -1,14 +1,18 @@
 import hashlib
+import logging
 import time
 from typing import Annotated
 
 import cloudinary
+import cloudinary.uploader
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.config import settings
 from app.deps import get_current_user
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
@@ -19,6 +23,16 @@ def _configure_cloudinary() -> None:
         api_key=settings.cloudinary_api_key,
         api_secret=settings.cloudinary_api_secret,
     )
+
+
+async def _destroy_cloudinary_image(public_id: str) -> None:
+    import asyncio
+
+    _configure_cloudinary()
+    try:
+        await asyncio.to_thread(cloudinary.uploader.destroy, public_id)
+    except Exception:
+        logger.exception("Failed to destroy Cloudinary asset %s", public_id)
 
 
 class SignedUploadParams(BaseModel):

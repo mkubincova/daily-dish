@@ -40,6 +40,7 @@ When making any UI change in `apps/web/`, read **[`apps/web/UI_GUIDELINES.md`](a
 - Prefer the simplest thing that satisfies the spec; defer cleverness.
 - Backend: Ruff-clean, async throughout, type-hinted.
 - Frontend: typed API client from generated OpenAPI types — don't hand-write request/response shapes.
+- **Port cleanup:** after starting the backend locally for any reason (OpenAPI codegen, manual testing), always kill the process when done — `lsof -ti :8000 | xargs kill -9`. The user runs the dev servers from their own terminal.
 
 ## Predecessor app
 

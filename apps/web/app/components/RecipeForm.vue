@@ -135,33 +135,40 @@ async function handleCreateTag() {
 
 const uploading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+const pendingFile = ref<File | null>(null);
+const previewUrl = ref<string | null>(null);
 
-async function uploadImage(event: Event) {
+function onFileSelect(event: Event) {
 	const file = (event.target as HTMLInputElement).files?.[0];
 	if (!file) return;
-	uploading.value = true;
-	try {
-		const params = await $fetch<SignedUploadParams>(
-			`${config.public.apiUrl}/uploads/sign`,
-			{ method: "POST", credentials: "include" },
-		);
-		const fd = new FormData();
-		fd.append("file", file);
-		fd.append("api_key", params.api_key);
-		fd.append("timestamp", String(params.timestamp));
-		fd.append("signature", params.signature);
-		fd.append("folder", params.folder);
+	if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
+	pendingFile.value = file;
+	previewUrl.value = URL.createObjectURL(file);
+}
 
-		const res = await fetch(
-			`https://api.cloudinary.com/v1_1/${params.cloud_name}/image/upload`,
-			{ method: "POST", body: fd },
-		);
-		const data = await res.json();
-		form.image_url = data.secure_url;
-		form.image_public_id = data.public_id;
-	} finally {
-		uploading.value = false;
-	}
+async function _uploadPendingFile(): Promise<void> {
+	const file = pendingFile.value;
+	if (!file) return;
+	const params = await $fetch<SignedUploadParams>(
+		`${config.public.apiUrl}/uploads/sign`,
+		{ method: "POST", credentials: "include" },
+	);
+	const fd = new FormData();
+	fd.append("file", file);
+	fd.append("api_key", params.api_key);
+	fd.append("timestamp", String(params.timestamp));
+	fd.append("signature", params.signature);
+	fd.append("folder", params.folder);
+	const res = await fetch(
+		`https://api.cloudinary.com/v1_1/${params.cloud_name}/image/upload`,
+		{ method: "POST", body: fd },
+	);
+	const data = await res.json();
+	form.image_url = data.secure_url;
+	form.image_public_id = data.public_id;
+	if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
+	previewUrl.value = null;
+	pendingFile.value = null;
 }
 
 // ── Ingredients / steps ───────────────────────────────────────────────────────
@@ -196,17 +203,23 @@ function removeStep(index: number) {
 
 // ── Submit ────────────────────────────────────────────────────────────────────
 
-function handleSubmit() {
-	const data: RecipeFormSubmitData = {
-		...form,
-		ingredients: form.ingredients.map((ing) => ({
-			...ing,
-			quantity: ing.quantity === "" ? null : ing.quantity,
-			unit: ing.unit === "" ? null : ing.unit,
-			notes: ing.notes === "" ? null : ing.notes,
-		})),
-	};
-	emit("submit", data);
+async function handleSubmit() {
+	uploading.value = true;
+	try {
+		if (pendingFile.value) await _uploadPendingFile();
+		const data: RecipeFormSubmitData = {
+			...form,
+			ingredients: form.ingredients.map((ing) => ({
+				...ing,
+				quantity: ing.quantity === "" ? null : ing.quantity,
+				unit: ing.unit === "" ? null : ing.unit,
+				notes: ing.notes === "" ? null : ing.notes,
+			})),
+		};
+		emit("submit", data);
+	} finally {
+		uploading.value = false;
+	}
 }
 </script>
 
@@ -272,8 +285,8 @@ function handleSubmit() {
     <div>
       <p class="dish-section-label mb-3">Hero Image</p>
       <img
-        v-if="form.image_url"
-        :src="form.image_url"
+        v-if="previewUrl || form.image_url"
+        :src="previewUrl ?? form.image_url ?? ''"
         alt="Recipe hero"
         class="h-40 w-auto max-w-xs object-cover mb-3"
       />
@@ -282,7 +295,7 @@ function handleSubmit() {
         type="file"
         accept="image/*"
         class="hidden"
-        @change="uploadImage"
+        @change="onFileSelect"
       />
       <button
         type="button"
@@ -290,13 +303,7 @@ function handleSubmit() {
         :disabled="uploading"
         @click="fileInput?.click()"
       >
-        {{
-          uploading
-            ? "Uploading…"
-            : form.image_url
-              ? "Change Image"
-              : "Upload Image"
-        }}
+        {{ pendingFile || form.image_url ? "Change Image" : "Upload Image" }}
       </button>
     </div>
 
@@ -524,8 +531,12 @@ function handleSubmit() {
 
     <!-- Submit -->
     <div class="pt-4 border-t border-dish-fg/10 flex justify-end">
-      <button type="submit" class="dish-btn-primary px-6 py-2.5">
-        {{ submitLabel ?? "Save Recipe" }}
+      <button
+        type="submit"
+        class="dish-btn-primary px-6 py-2.5 disabled:opacity-50"
+        :disabled="uploading"
+      >
+        {{ uploading ? "Saving…" : (submitLabel ?? "Save Recipe") }}
       </button>
     </div>
   </form>

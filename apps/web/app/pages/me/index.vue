@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhTrash } from "@phosphor-icons/vue";
 import type { components } from "~~/types/api";
 
 type RecipeListItem = components["schemas"]["RecipeListItem"];
@@ -24,7 +25,7 @@ watch(
 );
 
 async function deleteRecipe(id: string) {
-	if (!confirm("Delete this recipe? This cannot be undone.")) return;
+	if (!confirm("Move this recipe to trash?")) return;
 	await $fetch(`${config.public.apiUrl}/recipes/${id}`, {
 		method: "DELETE",
 		credentials: "include",
@@ -41,9 +42,18 @@ async function deleteRecipe(id: string) {
       <div class="flex-1 min-w-0 lg:overflow-y-auto">
         <div class="flex items-center justify-between mb-6">
           <h1 class="font-display font-black text-2xl">My Recipes</h1>
-          <NuxtLink to="/r/new" class="dish-btn-primary px-4 py-2">
-            + New Recipe
-          </NuxtLink>
+          <div class="flex items-center gap-2">
+            <NuxtLink
+              to="/me/trash"
+              class="dish-btn-secondary px-3 py-2 flex items-center gap-1.5"
+            >
+              <PhTrash class="w-3.5 h-3.5" />
+              <span class="font-mono text-xs uppercase tracking-widest">Trash</span>
+            </NuxtLink>
+            <NuxtLink to="/r/new" class="dish-btn-primary px-4 py-2">
+              + New Recipe
+            </NuxtLink>
+          </div>
         </div>
 
         <div v-if="pending" class="font-mono text-sm text-dish-fg/50 py-8">Loading…</div>
@@ -59,6 +69,7 @@ async function deleteRecipe(id: string) {
             @delete="deleteRecipe"
           />
         </div>
+
       </div>
     </div>
   </div>

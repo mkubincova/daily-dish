@@ -28,7 +28,7 @@ const isOwner = computed(() =>
 
 async function confirmDelete() {
 	if (!recipe.value) return;
-	if (!confirm("Delete this recipe? This cannot be undone.")) return;
+	if (!confirm("Move this recipe to trash?")) return;
 	await $fetch(`${config.public.apiUrl}/recipes/${recipe.value.id}`, {
 		method: "DELETE",
 		credentials: "include",
