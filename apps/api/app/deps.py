@@ -31,7 +31,13 @@ def set_session_cookie(response: Response, user_id: str) -> None:
 
 
 def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(key=SESSION_COOKIE, httponly=True)
+    is_prod = settings.environment == "production"
+    response.delete_cookie(
+        key=SESSION_COOKIE,
+        httponly=True,
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
+    )
 
 
 def _decode_session(token: str) -> str | None:
