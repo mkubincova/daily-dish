@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { components } from "~~/types/api";
 
-type Recipe = components["schemas"]["RecipeOut"];
+type Recipe = components["schemas"]["RecipeListItem"];
 
 const props = defineProps<{
 	recipe: Recipe;
@@ -12,7 +12,7 @@ const props = defineProps<{
 }>();
 
 function categoryItemIds(): string[] {
-	return (props.recipe as any).category_item_ids ?? [];
+	return props.recipe.category_item_ids ?? [];
 }
 
 const cardAccent = computed(() =>

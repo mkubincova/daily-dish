@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { components } from "~~/types/api";
 
-type Recipe = components["schemas"]["RecipeOut"];
+type Recipe = components["schemas"]["RecipeListItem"];
 type PaginatedRecipes = components["schemas"]["PaginatedRecipes"];
 
 const config = useRuntimeConfig();
