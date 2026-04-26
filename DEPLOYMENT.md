@@ -61,8 +61,8 @@ Set the following in the Railway service's **Variables** tab:
 ## 3. Vercel — Frontend
 
 1. In Vercel, click **Add New Project → Import Git Repository**, select this repository.
-2. Vercel reads `vercel.json` at the repo root, which sets `rootDirectory: apps/web`. No manual root directory change is needed.
-3. Vercel auto-detects the Nuxt framework.
+2. In the **Configure Project** screen (before deploying), expand **Root Directory** and set it to `apps/web`. This is required — Vercel cannot detect it automatically from a monorepo.
+3. Vercel auto-detects the Nuxt framework once the root directory is set.
 
 ### 3a. Vercel environment variables
 
