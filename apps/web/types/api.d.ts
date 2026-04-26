@@ -143,6 +143,24 @@ export interface paths {
         patch: operations["update_recipe_recipes__recipe_id__patch"];
         trace?: never;
     };
+    "/recipes/{recipe_id}/favorite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Favorite */
+        post: operations["add_favorite_recipes__recipe_id__favorite_post"];
+        /** Remove Favorite */
+        delete: operations["remove_favorite_recipes__recipe_id__favorite_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/recipes/mine": {
         parameters: {
             query?: never;
@@ -172,24 +190,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/recipes/{recipe_id}/favorite": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add Favorite */
-        post: operations["add_favorite_recipes__recipe_id__favorite_post"];
-        /** Remove Favorite */
-        delete: operations["remove_favorite_recipes__recipe_id__favorite_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -256,6 +256,11 @@ export interface components {
             id: string;
             /** Items */
             items: components["schemas"]["app__routers__categories__CategoryItemOut"][];
+        };
+        /** FavoriteOut */
+        FavoriteOut: {
+            /** Is Favorited */
+            is_favorited: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -353,11 +358,6 @@ export interface components {
              * @default []
              */
             tag_ids: string[];
-        };
-        /** FavoriteOut */
-        FavoriteOut: {
-            /** Is Favorited */
-            is_favorited: boolean;
         };
         /** RecipeListItem */
         RecipeListItem: {
@@ -739,7 +739,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -866,6 +868,70 @@ export interface operations {
             };
         };
     };
+    add_favorite_recipes__recipe_id__favorite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipe_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_favorite_recipes__recipe_id__favorite_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipe_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_mine_recipes_mine_get: {
         parameters: {
             query?: {
@@ -934,101 +1000,6 @@ export interface operations {
             };
         };
     };
-    sign_upload_uploads_sign_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SignedUploadParams"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_favorite_recipes__recipe_id__favorite_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                recipe_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_favorite_recipes__recipe_id__favorite_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                recipe_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_favorites_users_me_favorites_get: {
         parameters: {
             query?: {
@@ -1052,6 +1023,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedRecipes"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sign_upload_uploads_sign_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedUploadParams"];
                 };
             };
             /** @description Validation Error */
