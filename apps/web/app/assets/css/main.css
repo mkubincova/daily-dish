@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dish-bg text-dish-fg font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* Blob shapes reused in hero and login page */
+  .blob {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 54% 46% 62% 38% / 48% 56% 44% 52%;
+  }
+
+  /* Form field label — "Title *", "Servings", etc. */
+  .dish-field-label {
+    @apply block font-mono text-[10px] uppercase tracking-widest text-dish-fg/60;
+  }
+
+  /* Section heading within a form or sidebar — "Details", "Ingredients", etc. */
+  .dish-section-label {
+    @apply font-mono text-[10px] uppercase tracking-widest text-dish-fg font-semibold;
+  }
+
+  /* Standard form control — inputs and textareas */
+  .dish-input {
+    @apply border border-dish-fg/20 px-3 py-2 text-sm bg-dish-surface text-dish-fg focus:outline-none focus:border-dish-fg transition-colors;
+  }
+
+  /* Compact variant for tight row layouts (e.g. ingredient fields) */
+  .dish-input-sm {
+    @apply border border-dish-fg/20 px-2 py-1.5 text-sm bg-dish-surface text-dish-fg focus:outline-none focus:border-dish-fg transition-colors;
+  }
+
+  /* Tag pill — consistent across cards, detail page, and form */
+  .dish-tag {
+    @apply font-mono text-[10px] uppercase tracking-wide bg-dish-fg text-dish-surface border border-dish-fg rounded-full px-2.5 py-0.5;
+  }
+
+  /* Button variants — add padding/sizing alongside these classes */
+  .dish-btn-primary {
+    @apply bg-dish-fg text-dish-surface font-mono text-xs uppercase tracking-widest hover:bg-dish-primary transition-colors;
+  }
+
+  .dish-btn-secondary {
+    @apply font-mono text-xs uppercase tracking-widest border border-dish-fg/25 text-dish-fg hover:border-dish-fg transition-colors;
+  }
+
+  .dish-btn-danger {
+    @apply font-mono text-xs uppercase tracking-widest border border-dish-error/50 text-dish-error hover:bg-dish-error hover:text-dish-surface transition-colors;
+  }
+}
+
+/* Mobile slide-down menu transition */
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.slide-down-enter-from,
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* Sidebar drawer transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: transform 0.25s ease;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(100%);
+}

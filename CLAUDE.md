@@ -30,6 +30,10 @@ This project is spec-driven. Before writing non-trivial code, check for an activ
 - **Scope discipline:** when uncertain whether something belongs in the current change, prefer adding a v2 item to the backlog over expanding scope.
 - **Migrations:** whenever a task creates or modifies an Alembic migration file, immediately run `cd apps/api && uv run alembic upgrade head` against the local database before marking the task done, so the schema is ready for manual testing.
 
+## UI / Frontend design
+
+When making any UI change in `apps/web/`, read **[`apps/web/UI_GUIDELINES.md`](apps/web/UI_GUIDELINES.md)** first. It documents the established design system: `dish-*` color tokens, typography roles, icon library, component classes, layout conventions, and interaction patterns.
+
 ## Conventions
 
 - **Conventional Commits** (`feat:`, `fix:`, `chore:`, etc.).

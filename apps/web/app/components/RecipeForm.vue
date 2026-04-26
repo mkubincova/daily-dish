@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhCheck, PhX } from "@phosphor-icons/vue";
 import type { components } from "~~/types/api";
 import type {
 	RecipeFormData,
@@ -21,34 +22,6 @@ const emit = defineEmits<{
 }>();
 
 const config = useRuntimeConfig();
-
-// ── FE label config (mirrors CategorySidebar) ───────────────────────────────
-
-const ITEM_CONFIG: Record<string, { label: string }> = {
-	soup: { label: "Soup" },
-	salad: { label: "Salad" },
-	main: { label: "Main Course" },
-	side: { label: "Side Dish" },
-	dessert: { label: "Dessert" },
-	snack: { label: "Snack" },
-	light: { label: "Light" },
-	vegetarian: { label: "Vegetarian" },
-	spicy: { label: "Spicy" },
-	hearty: { label: "Hearty" },
-	fried: { label: "Fried" },
-	beef: { label: "Beef" },
-	chicken: { label: "Chicken" },
-	pork: { label: "Pork" },
-	fish: { label: "Fish" },
-	rabbit: { label: "Rabbit" },
-	duck: { label: "Duck" },
-	turkey: { label: "Turkey" },
-	plant_based: { label: "Plant-Based" },
-};
-
-function itemLabel(id: string): string {
-	return ITEM_CONFIG[id]?.label ?? id;
-}
 
 // ── Form state ────────────────────────────────────────────────────────────────
 
@@ -92,11 +65,8 @@ const sortedCategories = computed<Category[]>(() =>
 
 function toggleCategoryItem(itemId: string) {
 	const idx = form.category_item_ids.indexOf(itemId);
-	if (idx >= 0) {
-		form.category_item_ids.splice(idx, 1);
-	} else {
-		form.category_item_ids.push(itemId);
-	}
+	if (idx >= 0) form.category_item_ids.splice(idx, 1);
+	else form.category_item_ids.push(itemId);
 }
 
 // ── Tags ──────────────────────────────────────────────────────────────────────
@@ -131,9 +101,7 @@ const showCreateOption = computed(() => {
 });
 
 function selectTag(tag: Tag) {
-	if (!form.tag_ids.includes(tag.id)) {
-		form.tag_ids.push(tag.id);
-	}
+	if (!form.tag_ids.includes(tag.id)) form.tag_ids.push(tag.id);
 	tagQuery.value = "";
 	tagDropdownOpen.value = false;
 }
@@ -243,90 +211,71 @@ function handleSubmit() {
 </script>
 
 <template>
-  <form class="space-y-6" @submit.prevent="handleSubmit">
+  <form class="space-y-8" @submit.prevent="handleSubmit">
     <!-- Basic info -->
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+        <label class="dish-field-label mb-1.5">Title *</label>
         <input
           v-model="form.title"
           required
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          class="w-full dish-input"
           placeholder="e.g. Chocolate Chip Cookies"
         />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label class="dish-field-label mb-1.5">Description</label>
         <textarea
           v-model="form.description"
           rows="3"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          class="w-full dish-input resize-none"
         />
       </div>
     </div>
 
     <!-- Times & servings -->
-    <div class="grid grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Servings</label>
-        <input
-          v-model.number="form.servings"
-          type="number"
-          min="1"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Prep (min)</label>
-        <input
-          v-model.number="form.prep_time_minutes"
-          type="number"
-          min="0"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Cook (min)</label>
-        <input
-          v-model.number="form.cook_time_minutes"
-          type="number"
-          min="0"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-        />
-      </div>
-    </div>
-
-    <!-- Visibility -->
-    <div class="flex items-center gap-3">
-      <input
-        id="is_public"
-        v-model="form.is_public"
-        type="checkbox"
-        class="rounded"
-      />
-      <label for="is_public" class="text-sm text-gray-700">Public (visible to everyone)</label>
-    </div>
-
-    <!-- Source URL -->
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Source URL</label>
-      <input
-        v-model="form.source_url"
-        type="url"
-        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-        placeholder="https://..."
-      />
+      <p class="dish-section-label mb-3">Details</p>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="dish-field-label mb-1.5">Servings</label>
+          <input
+            v-model.number="form.servings"
+            type="number"
+            min="1"
+            class="w-full dish-input"
+          />
+        </div>
+        <div>
+          <label class="dish-field-label mb-1.5">Prep (min)</label>
+          <input
+            v-model.number="form.prep_time_minutes"
+            type="number"
+            min="0"
+            class="w-full dish-input"
+          />
+        </div>
+        <div>
+          <label class="dish-field-label mb-1.5">Cook (min)</label>
+          <input
+            v-model.number="form.cook_time_minutes"
+            type="number"
+            min="0"
+            class="w-full dish-input"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Image upload -->
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Hero Image</label>
+      <p class="dish-section-label mb-3">Hero Image</p>
       <img
         v-if="form.image_url"
         :src="form.image_url"
         alt="Recipe hero"
-        class="w-full h-48 object-cover rounded-lg mb-2"
+        class="h-40 w-auto max-w-xs object-cover mb-3"
       />
       <input
         ref="fileInput"
@@ -337,31 +286,83 @@ function handleSubmit() {
       />
       <button
         type="button"
-        class="text-sm border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"
+        class="dish-btn-secondary px-4 py-2 disabled:opacity-50"
         :disabled="uploading"
         @click="fileInput?.click()"
       >
-        {{ uploading ? 'Uploading…' : form.image_url ? 'Change Image' : 'Upload Image' }}
+        {{
+          uploading
+            ? "Uploading…"
+            : form.image_url
+              ? "Change Image"
+              : "Upload Image"
+        }}
       </button>
+    </div>
+
+    <!-- Visibility -->
+    <div>
+      <p class="dish-section-label mb-3">Visibility</p>
+      <button
+        type="button"
+        class="flex items-center gap-2.5 group"
+        @click="form.is_public = !form.is_public"
+      >
+        <span
+          class="w-3.5 h-3.5 border shrink-0 flex items-center justify-center transition-colors"
+          :class="
+            form.is_public
+              ? 'bg-dish-fg border-dish-fg'
+              : 'border-dish-fg/40 group-hover:border-dish-fg'
+          "
+        >
+          <PhCheck
+            v-if="form.is_public"
+            class="w-2.5 h-2.5 text-white"
+            :weight="'bold'"
+          />
+        </span>
+        <span
+          class="font-mono text-xs uppercase tracking-widest text-dish-fg/70"
+          >Public (visible to everyone)</span
+        >
+      </button>
+    </div>
+
+    <!-- Source URL -->
+    <div>
+      <label class="dish-field-label mb-1.5">Source URL</label>
+      <input
+        v-model="form.source_url"
+        type="url"
+        class="w-full dish-input"
+        placeholder="https://..."
+      />
     </div>
 
     <!-- Categories -->
     <div v-if="sortedCategories.length > 0">
-      <h3 class="text-base font-semibold text-gray-900 mb-3">Categories</h3>
-      <div class="space-y-3">
+      <p class="dish-section-label mb-3">Categories</p>
+      <div class="space-y-4">
         <div v-for="cat in sortedCategories" :key="cat.id">
-          <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
-            {{ cat.id.replace('_', ' ') }}
+          <p
+            class="font-mono text-[10px] uppercase tracking-widest text-dish-fg/50 mb-2"
+          >
+            {{ cat.id.replace("_", " ") }}
           </p>
           <div class="flex flex-wrap gap-2">
             <button
-              v-for="item in [...cat.items].sort((a, b) => itemLabel(a.id).localeCompare(itemLabel(b.id)))"
+              v-for="item in [...cat.items].sort((a, b) =>
+                itemLabel(a.id).localeCompare(itemLabel(b.id)),
+              )"
               :key="item.id"
               type="button"
-              class="px-3 py-1 rounded-full text-sm border transition-colors"
-              :class="form.category_item_ids.includes(item.id)
-                ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-emerald-400'"
+              class="px-3 py-1 font-mono text-xs uppercase tracking-widest border transition-colors"
+              :class="
+                form.category_item_ids.includes(item.id)
+                  ? 'bg-dish-fg text-dish-surface border-dish-fg'
+                  : 'text-dish-fg/60 border-dish-fg/25 hover:border-dish-fg hover:text-dish-fg'
+              "
               @click="toggleCategoryItem(item.id)"
             >
               {{ itemLabel(item.id) }}
@@ -373,46 +374,49 @@ function handleSubmit() {
 
     <!-- Tags -->
     <div>
-      <h3 class="text-base font-semibold text-gray-900 mb-3">Tags</h3>
+      <p class="dish-section-label mb-3">Tags</p>
 
       <!-- Selected tags -->
-      <div v-if="selectedTags.length > 0" class="flex flex-wrap gap-2 mb-3">
+      <div v-if="selectedTags.length > 0" class="flex flex-wrap gap-1.5 mb-3">
         <span
           v-for="tag in selectedTags"
           :key="tag.id"
-          class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-violet-100 text-violet-700"
+          class="dish-tag inline-flex items-center gap-1"
         >
           {{ tag.name }}
           <button
             type="button"
-            class="text-violet-400 hover:text-violet-700 leading-none"
+            class="text-dish-surface/50 hover:text-dish-surface transition-colors leading-none"
             @click="removeTag(tag.id)"
           >
-            ×
+            <PhX class="w-2.5 h-2.5" />
           </button>
         </span>
       </div>
 
-      <!-- Typeahead input -->
+      <!-- Typeahead -->
       <div class="relative">
         <input
           v-model="tagQuery"
           type="text"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+          class="w-full dish-input"
           placeholder="Search or add tag…"
           autocomplete="off"
           @focus="tagDropdownOpen = true"
           @blur="scheduleCloseDropdown"
         />
         <div
-          v-if="tagDropdownOpen && (filteredSuggestions.length > 0 || showCreateOption)"
-          class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto"
+          v-if="
+            tagDropdownOpen &&
+            (filteredSuggestions.length > 0 || showCreateOption)
+          "
+          class="absolute z-10 mt-px w-full bg-dish-surface border border-dish-fg/20 shadow-md max-h-48 overflow-y-auto"
         >
           <button
             v-for="tag in filteredSuggestions"
             :key="tag.id"
             type="button"
-            class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+            class="w-full text-left px-3 py-2 text-sm text-dish-fg hover:bg-dish-bg transition-colors"
             @click="selectTag(tag)"
           >
             {{ tag.name }}
@@ -420,106 +424,108 @@ function handleSubmit() {
           <button
             v-if="showCreateOption"
             type="button"
-            class="w-full text-left px-3 py-2 text-sm text-violet-600 hover:bg-violet-50 border-t border-gray-100"
+            class="w-full text-left px-3 py-2 text-sm text-dish-primary hover:bg-dish-bg transition-colors border-t border-dish-fg/10"
             @click="handleCreateTag"
           >
             Create "{{ tagQuery.trim() }}"
           </button>
         </div>
       </div>
-      <p v-if="tagError" class="mt-1 text-sm text-red-600">{{ tagError }}</p>
+      <p v-if="tagError" class="mt-1 font-mono text-xs text-dish-secondary">
+        {{ tagError }}
+      </p>
     </div>
 
     <!-- Ingredients -->
     <div>
-      <h3 class="text-base font-semibold text-gray-900 mb-3">Ingredients</h3>
+      <p class="dish-section-label mb-3">Ingredients</p>
       <div class="space-y-2">
         <div
           v-for="(ing, i) in form.ingredients"
           :key="i"
-          class="flex gap-2 items-start"
+          class="grid grid-cols-[1fr_1fr] sm:grid-cols-[5rem_5rem_1fr_8rem_auto] gap-2 items-start"
         >
           <input
             v-model="ing.quantity"
-            class="w-20 border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+            class="dish-input-sm"
             placeholder="Qty"
           />
           <input
             v-model="ing.unit"
-            class="w-20 border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+            class="dish-input-sm"
             placeholder="Unit"
           />
           <input
             v-model="ing.name"
             required
-            class="flex-1 border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+            class="col-span-2 sm:col-span-1 dish-input-sm"
             placeholder="Ingredient name *"
           />
           <input
             v-model="ing.notes"
-            class="w-32 border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+            class="dish-input-sm"
             placeholder="Notes"
           />
           <button
             type="button"
-            class="text-gray-400 hover:text-red-500 mt-1.5 text-lg leading-none"
+            class="text-dish-fg/30 hover:text-dish-secondary transition-colors mt-1.5 justify-self-end sm:justify-self-auto"
             @click="removeIngredient(i)"
           >
-            ×
+            <PhX class="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
       <button
         type="button"
-        class="mt-2 text-sm text-emerald-600 hover:underline"
+        class="mt-3 font-mono text-xs uppercase tracking-widest text-dish-primary hover:text-dish-fg transition-colors"
         @click="addIngredient"
       >
-        + Add ingredient
+        + Add Ingredient
       </button>
     </div>
 
     <!-- Steps -->
     <div>
-      <h3 class="text-base font-semibold text-gray-900 mb-3">Steps</h3>
+      <p class="dish-section-label mb-3">Steps</p>
       <div class="space-y-3">
         <div
           v-for="(step, i) in form.steps"
           :key="i"
           class="flex gap-3 items-start"
         >
-          <span class="text-emerald-600 font-bold mt-2 shrink-0">{{ step.position }}.</span>
+          <span
+            class="font-display font-black text-dish-primary text-lg shrink-0 mt-2 w-5"
+            >{{ step.position }}.</span
+          >
           <textarea
             v-model="step.text"
             required
             rows="2"
-            class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+            class="flex-1 dish-input resize-none"
             :placeholder="`Step ${step.position}`"
           />
           <button
             type="button"
-            class="text-gray-400 hover:text-red-500 mt-2 text-lg leading-none"
+            class="text-dish-fg/30 hover:text-dish-secondary transition-colors mt-2.5 shrink-0"
             @click="removeStep(i)"
           >
-            ×
+            <PhX class="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
       <button
         type="button"
-        class="mt-2 text-sm text-emerald-600 hover:underline"
+        class="mt-3 font-mono text-xs uppercase tracking-widest text-dish-primary hover:text-dish-fg transition-colors"
         @click="addStep"
       >
-        + Add step
+        + Add Step
       </button>
     </div>
 
     <!-- Submit -->
-    <div class="pt-4 border-t border-gray-200">
-      <button
-        type="submit"
-        class="bg-emerald-600 text-white px-6 py-2.5 rounded-md text-sm font-medium hover:bg-emerald-700"
-      >
-        {{ submitLabel ?? 'Save Recipe' }}
+    <div class="pt-4 border-t border-dish-fg/10 flex justify-end">
+      <button type="submit" class="dish-btn-primary px-6 py-2.5">
+        {{ submitLabel ?? "Save Recipe" }}
       </button>
     </div>
   </form>

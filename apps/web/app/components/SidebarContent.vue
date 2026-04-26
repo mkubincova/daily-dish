@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhCheck } from "@phosphor-icons/vue";
 import type { components } from "~~/types/api";
 
 type Category = components["schemas"]["CategoryOut"];
@@ -14,7 +15,6 @@ defineProps<{
 	activeTagIds: Set<string>;
 	showStatus?: boolean;
 	status: "published" | "draft" | "all";
-	itemLabel: (id: string) => string;
 }>();
 
 const emit = defineEmits<{
@@ -22,67 +22,99 @@ const emit = defineEmits<{
 	toggleTag: [id: string];
 	setStatus: [s: "published" | "draft" | "all"];
 }>();
+
+const CATEGORY_GROUP_LABELS: Record<string, string> = {
+	dish_type: "Dish Type",
+	mood: "Mood",
+	protein: "Protein",
+};
 </script>
 
 <template>
-  <div class="space-y-5">
-    <!-- Status group (owner /me only) -->
+  <div class="space-y-6">
+
+    <!-- Status (owner /me page only) -->
     <div v-if="showStatus">
-      <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Status</p>
-      <div class="flex flex-wrap gap-2">
+      <p class="dish-section-label mb-2">Status</p>
+      <div class="space-y-1">
         <button
           v-for="opt in (['all', 'published', 'draft'] as const)"
           :key="opt"
           type="button"
-          class="px-3 py-1 rounded-full text-sm border transition-colors"
-          :class="status === opt
-            ? 'bg-emerald-600 text-white border-emerald-600'
-            : 'bg-white text-gray-600 border-gray-300 hover:border-emerald-400'"
+          class="flex items-center gap-2.5 w-full py-0.5 text-left group"
           @click="emit('setStatus', opt)"
         >
-          {{ opt.charAt(0).toUpperCase() + opt.slice(1) }}
+          <span
+            class="w-3.5 h-3.5 border shrink-0 flex items-center justify-center transition-colors"
+            :class="status === opt
+              ? 'bg-dish-fg border-dish-fg'
+              : 'border-dish-fg/40 group-hover:border-dish-fg'"
+          >
+            <PhCheck v-if="status === opt" class="w-2.5 h-2.5 text-white" :weight="'bold'" />
+          </span>
+          <span
+            class="text-sm transition-colors"
+            :class="status === opt ? 'text-dish-fg font-medium' : 'text-dish-fg group-hover:text-dish-fg'"
+          >
+            {{ opt.charAt(0).toUpperCase() + opt.slice(1) }}
+          </span>
         </button>
       </div>
     </div>
 
-    <!-- Category sections -->
+    <!-- Category groups — checkbox style with icons -->
     <div v-for="cat in sortedCategories" :key="cat.id">
-      <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
-        {{ cat.id.replace('_', ' ') }}
+      <p class="dish-section-label mb-2">
+        {{ CATEGORY_GROUP_LABELS[cat.id] ?? cat.id.replace('_', ' ') }}
       </p>
-      <div class="flex flex-wrap gap-2">
+      <div class="space-y-1">
         <button
           v-for="item in sortedItems(cat)"
           :key="item.id"
           type="button"
-          class="px-3 py-1 rounded-full text-sm border transition-colors"
-          :class="activeItemIds.has(item.id)
-            ? 'bg-emerald-600 text-white border-emerald-600'
-            : 'bg-white text-gray-600 border-gray-300 hover:border-emerald-400'"
+          class="flex items-center gap-2.5 w-full py-0.5 text-left group"
           @click="emit('toggleItem', item.id)"
         >
-          {{ itemLabel(item.id) }}
+          <!-- Checkbox -->
+          <span
+            class="w-3.5 h-3.5 border shrink-0 flex items-center justify-center transition-colors"
+            :class="activeItemIds.has(item.id)
+              ? 'bg-dish-fg border-dish-fg'
+              : 'border-dish-fg/40 group-hover:border-dish-fg'"
+          >
+            <PhCheck v-if="activeItemIds.has(item.id)" class="w-2.5 h-2.5 text-white" :weight="'bold'" />
+          </span>
+          <!-- Icon -->
+          <span class="text-sm leading-none" aria-hidden="true">{{ itemIcon(item.id) }}</span>
+          <!-- Label -->
+          <span
+            class="text-sm transition-colors"
+            :class="activeItemIds.has(item.id) ? 'text-dish-fg font-medium' : 'text-dish-fg group-hover:text-dish-fg'"
+          >
+            {{ itemLabel(item.id) }}
+          </span>
         </button>
       </div>
     </div>
 
-    <!-- Tags section -->
+    <!-- Tags — rounded pills, visually distinct from category checkboxes -->
     <div v-if="tags.length > 0">
-      <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Tags</p>
-      <div class="flex flex-wrap gap-2">
+      <p class="dish-section-label mb-2">Tags</p>
+      <div class="flex flex-wrap gap-1.5">
         <button
           v-for="tag in tags"
           :key="tag.id"
           type="button"
-          class="px-3 py-1 rounded-full text-sm border transition-colors"
+          class="px-2.5 py-0.5 font-mono text-xs border transition-colors rounded-full"
           :class="activeTagIds.has(tag.id)
-            ? 'bg-violet-600 text-white border-violet-600'
-            : 'bg-white text-gray-600 border-gray-300 hover:border-violet-400'"
+            ? 'bg-dish-fg text-dish-surface border-dish-fg'
+            : 'text-dish-fg border-dish-fg/30 hover:border-dish-fg hover:text-dish-fg'"
           @click="emit('toggleTag', tag.id)"
         >
           {{ tag.name }}
         </button>
       </div>
     </div>
+
   </div>
 </template>

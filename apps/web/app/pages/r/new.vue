@@ -34,9 +34,9 @@ async function handleSubmit(data: RecipeFormSubmitData) {
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">New Recipe</h1>
-    <p v-if="error" class="mb-4 text-sm text-red-600">{{ error }}</p>
+  <div class="max-w-3xl mx-auto px-4 md:px-6 py-8">
+    <h1 class="font-display font-black text-2xl mb-6">New Recipe</h1>
+    <p v-if="error" class="mb-4 font-mono text-xs text-dish-secondary">{{ error }}</p>
     <RecipeForm submit-label="Create Recipe" @submit="handleSubmit" />
   </div>
 </template>
