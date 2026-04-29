@@ -8,13 +8,13 @@ from app.utils.uuid7 import new_uuid7
 
 @pytest.mark.asyncio
 async def test_me_anonymous(client: AsyncClient):
-    resp = await client.get("/auth/me")
+    resp = await client.get("/api/auth/me")
     assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_me_authenticated(auth_client: AsyncClient, user: User):
-    resp = await auth_client.get("/auth/me")
+    resp = await auth_client.get("/api/auth/me")
     assert resp.status_code == 200
     data = resp.json()
     assert data["email"] == user.email
@@ -24,7 +24,7 @@ async def test_me_authenticated(auth_client: AsyncClient, user: User):
 
 @pytest.mark.asyncio
 async def test_logout_clears_cookie(auth_client: AsyncClient):
-    resp = await auth_client.post("/auth/logout")
+    resp = await auth_client.post("/api/auth/logout")
     assert resp.status_code == 200
     # Cookie should be cleared
     assert SESSION_COOKIE not in resp.cookies or resp.cookies[SESSION_COOKIE] == ""
@@ -50,7 +50,7 @@ async def test_tampered_cookie_rejected(client: AsyncClient, session, user: User
         base_url="http://test",
         cookies={SESSION_COOKIE: "tampered.invalid.cookie"},
     ) as ac:
-        resp = await ac.get("/auth/me")
+        resp = await ac.get("/api/auth/me")
         assert resp.status_code == 401
 
     app.dependency_overrides.clear()

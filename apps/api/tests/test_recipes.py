@@ -19,13 +19,13 @@ RECIPE_PAYLOAD = {
 
 @pytest.mark.asyncio
 async def test_create_recipe_requires_auth(client: AsyncClient):
-    resp = await client.post("/recipes", json=RECIPE_PAYLOAD)
+    resp = await client.post("/api/recipes", json=RECIPE_PAYLOAD)
     assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_create_recipe(auth_client: AsyncClient, user: User):
-    resp = await auth_client.post("/recipes", json=RECIPE_PAYLOAD)
+    resp = await auth_client.post("/api/recipes", json=RECIPE_PAYLOAD)
     assert resp.status_code == 201
     data = resp.json()
     assert data["title"] == "Chocolate Cake"
@@ -37,7 +37,7 @@ async def test_create_recipe(auth_client: AsyncClient, user: User):
 
 @pytest.mark.asyncio
 async def test_create_recipe_missing_title(auth_client: AsyncClient):
-    resp = await auth_client.post("/recipes", json={"description": "No title"})
+    resp = await auth_client.post("/api/recipes", json={"description": "No title"})
     assert resp.status_code == 422
 
 
@@ -53,7 +53,7 @@ async def test_public_list_anonymous(client: AsyncClient, session, user: User):
     session.add(recipe)
     await session.commit()
 
-    resp = await client.get("/recipes")
+    resp = await client.get("/api/recipes")
     assert resp.status_code == 200
     data = resp.json()
     assert data["total"] >= 1
@@ -72,7 +72,7 @@ async def test_public_list_excludes_drafts(client: AsyncClient, session, user: U
     session.add(draft)
     await session.commit()
 
-    resp = await client.get("/recipes")
+    resp = await client.get("/api/recipes")
     assert resp.status_code == 200
     data = resp.json()
     slugs = [r["slug"] for r in data["items"]]
@@ -91,7 +91,7 @@ async def test_get_public_recipe_by_slug(client: AsyncClient, session, user: Use
     session.add(recipe)
     await session.commit()
 
-    resp = await client.get("/recipes/visible-abc")
+    resp = await client.get("/api/recipes/visible-abc")
     assert resp.status_code == 200
     assert resp.json()["title"] == "Visible"
 
@@ -108,7 +108,7 @@ async def test_get_draft_recipe_anonymous_returns_404(client: AsyncClient, sessi
     session.add(recipe)
     await session.commit()
 
-    resp = await client.get("/recipes/draft-secret")
+    resp = await client.get("/api/recipes/draft-secret")
     assert resp.status_code == 404
 
 
@@ -124,7 +124,7 @@ async def test_owner_can_see_own_draft(auth_client: AsyncClient, session, user: 
     session.add(recipe)
     await session.commit()
 
-    resp = await auth_client.get("/recipes/my-draft-111")
+    resp = await auth_client.get("/api/recipes/my-draft-111")
     assert resp.status_code == 200
 
 
@@ -156,7 +156,7 @@ async def test_non_owner_cannot_see_draft(session, other_user: User, user: User)
         base_url="http://test",
         cookies={SESSION_COOKIE: cookie},
     ) as ac:
-        resp = await ac.get("/recipes/owner-draft-222")
+        resp = await ac.get("/api/recipes/owner-draft-222")
         assert resp.status_code == 404
 
     app.dependency_overrides.clear()
@@ -164,7 +164,7 @@ async def test_non_owner_cannot_see_draft(session, other_user: User, user: User)
 
 @pytest.mark.asyncio
 async def test_mine_requires_auth(client: AsyncClient):
-    resp = await client.get("/recipes/mine")
+    resp = await client.get("/api/recipes/mine")
     assert resp.status_code == 401
 
 
@@ -178,7 +178,7 @@ async def test_mine_includes_drafts(auth_client: AsyncClient, session, user: Use
     session.add(draft)
     await session.commit()
 
-    resp = await auth_client.get("/recipes/mine")
+    resp = await auth_client.get("/api/recipes/mine")
     assert resp.status_code == 200
     slugs = [r["slug"] for r in resp.json()]
     assert "pub-mine-1" in slugs
@@ -193,11 +193,11 @@ async def test_soft_delete(auth_client: AsyncClient, session, user: User):
     session.add(recipe)
     await session.commit()
 
-    resp = await auth_client.delete(f"/recipes/{recipe.id}")
+    resp = await auth_client.delete(f"/api/recipes/{recipe.id}")
     assert resp.status_code == 204
 
     # Should now be 404
-    resp2 = await auth_client.get("/recipes/to-delete-1")
+    resp2 = await auth_client.get("/api/recipes/to-delete-1")
     assert resp2.status_code == 404
 
 
@@ -225,7 +225,7 @@ async def test_non_owner_delete_returns_404(session, other_user: User, user: Use
         base_url="http://test",
         cookies={SESSION_COOKIE: cookie},
     ) as ac:
-        resp = await ac.delete(f"/recipes/{recipe.id}")
+        resp = await ac.delete(f"/api/recipes/{recipe.id}")
         assert resp.status_code == 404
 
     app.dependency_overrides.clear()
@@ -239,7 +239,9 @@ async def test_update_recipe(auth_client: AsyncClient, session, user: User):
     session.add(recipe)
     await session.commit()
 
-    resp = await auth_client.patch(f"/recipes/{recipe.id}", json={"description": "Updated desc"})
+    resp = await auth_client.patch(
+        f"/api/recipes/{recipe.id}", json={"description": "Updated desc"}
+    )
     assert resp.status_code == 200
     assert resp.json()["description"] == "Updated desc"
 
@@ -253,7 +255,7 @@ async def test_update_replaces_ingredients(auth_client: AsyncClient, session, us
     await session.commit()
 
     resp = await auth_client.patch(
-        f"/recipes/{recipe.id}",
+        f"/api/recipes/{recipe.id}",
         json={"ingredients": [{"position": 1, "name": "salt"}]},
     )
     assert resp.status_code == 200

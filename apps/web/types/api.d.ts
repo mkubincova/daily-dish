@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/auth/{provider}/login": {
+    "/api/auth/{provider}/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,7 +12,7 @@ export interface paths {
             cookie?: never;
         };
         /** Oauth Login */
-        get: operations["oauth_login_auth__provider__login_get"];
+        get: operations["oauth_login_api_auth__provider__login_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -21,7 +21,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/{provider}/callback": {
+    "/api/auth/{provider}/callback": {
         parameters: {
             query?: never;
             header?: never;
@@ -29,7 +29,7 @@ export interface paths {
             cookie?: never;
         };
         /** Oauth Callback */
-        get: operations["oauth_callback_auth__provider__callback_get"];
+        get: operations["oauth_callback_api_auth__provider__callback_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -38,7 +38,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/me": {
+    "/api/auth/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -46,7 +46,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Me */
-        get: operations["get_me_auth_me_get"];
+        get: operations["get_me_api_auth_me_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -55,7 +55,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/logout": {
+    "/api/auth/logout": {
         parameters: {
             query?: never;
             header?: never;
@@ -65,14 +65,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Logout */
-        post: operations["logout_auth_logout_post"];
+        post: operations["logout_api_auth_logout_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/categories": {
+    "/api/categories": {
         parameters: {
             query?: never;
             header?: never;
@@ -80,7 +80,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Categories */
-        get: operations["list_categories_categories_get"];
+        get: operations["list_categories_api_categories_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -89,7 +89,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tags": {
+    "/api/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -97,17 +97,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Tags */
-        get: operations["list_tags_tags_get"];
+        get: operations["list_tags_api_tags_get"];
         put?: never;
         /** Create Tag */
-        post: operations["create_tag_tags_post"];
+        post: operations["create_tag_api_tags_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/recipes": {
+    "/api/recipes": {
         parameters: {
             query?: never;
             header?: never;
@@ -115,17 +115,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Recipes */
-        get: operations["list_recipes_recipes_get"];
+        get: operations["list_recipes_api_recipes_get"];
         put?: never;
         /** Create Recipe */
-        post: operations["create_recipe_recipes_post"];
+        post: operations["create_recipe_api_recipes_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/recipes/{recipe_id}": {
+    "/api/recipes/{recipe_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -136,14 +136,14 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Recipe */
-        delete: operations["delete_recipe_recipes__recipe_id__delete"];
+        delete: operations["delete_recipe_api_recipes__recipe_id__delete"];
         options?: never;
         head?: never;
         /** Update Recipe */
-        patch: operations["update_recipe_recipes__recipe_id__patch"];
+        patch: operations["update_recipe_api_recipes__recipe_id__patch"];
         trace?: never;
     };
-    "/recipes/{recipe_id}/favorite": {
+    "/api/recipes/{recipe_id}/favorite": {
         parameters: {
             query?: never;
             header?: never;
@@ -153,15 +153,15 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add Favorite */
-        post: operations["add_favorite_recipes__recipe_id__favorite_post"];
+        post: operations["add_favorite_api_recipes__recipe_id__favorite_post"];
         /** Remove Favorite */
-        delete: operations["remove_favorite_recipes__recipe_id__favorite_delete"];
+        delete: operations["remove_favorite_api_recipes__recipe_id__favorite_delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/recipes/{recipe_id}/restore": {
+    "/api/recipes/{recipe_id}/restore": {
         parameters: {
             query?: never;
             header?: never;
@@ -171,14 +171,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Restore Recipe */
-        post: operations["restore_recipe_recipes__recipe_id__restore_post"];
+        post: operations["restore_recipe_api_recipes__recipe_id__restore_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/recipes/{recipe_id}/permanent": {
+    "/api/recipes/{recipe_id}/permanent": {
         parameters: {
             query?: never;
             header?: never;
@@ -189,13 +189,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** Permanently Delete Recipe */
-        delete: operations["permanently_delete_recipe_recipes__recipe_id__permanent_delete"];
+        delete: operations["permanently_delete_recipe_api_recipes__recipe_id__permanent_delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/recipes/mine": {
+    "/api/recipes/mine": {
         parameters: {
             query?: never;
             header?: never;
@@ -203,7 +203,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Mine */
-        get: operations["list_mine_recipes_mine_get"];
+        get: operations["list_mine_api_recipes_mine_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -212,7 +212,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/recipes/trashed": {
+    "/api/recipes/trashed": {
         parameters: {
             query?: never;
             header?: never;
@@ -220,7 +220,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Trashed */
-        get: operations["list_trashed_recipes_trashed_get"];
+        get: operations["list_trashed_api_recipes_trashed_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -229,7 +229,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/recipes/{slug}": {
+    "/api/recipes/{slug}": {
         parameters: {
             query?: never;
             header?: never;
@@ -237,7 +237,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Recipe */
-        get: operations["get_recipe_recipes__slug__get"];
+        get: operations["get_recipe_api_recipes__slug__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -246,7 +246,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/users/me/favorites": {
+    "/api/users/me/favorites": {
         parameters: {
             query?: never;
             header?: never;
@@ -254,7 +254,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Favorites */
-        get: operations["list_favorites_users_me_favorites_get"];
+        get: operations["list_favorites_api_users_me_favorites_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -263,7 +263,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/uploads/sign": {
+    "/api/uploads/sign": {
         parameters: {
             query?: never;
             header?: never;
@@ -273,7 +273,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Sign Upload */
-        post: operations["sign_upload_uploads_sign_post"];
+        post: operations["sign_upload_api_uploads_sign_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -606,7 +606,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    oauth_login_auth__provider__login_get: {
+    oauth_login_api_auth__provider__login_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -637,7 +637,7 @@ export interface operations {
             };
         };
     };
-    oauth_callback_auth__provider__callback_get: {
+    oauth_callback_api_auth__provider__callback_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -668,7 +668,7 @@ export interface operations {
             };
         };
     };
-    get_me_auth_me_get: {
+    get_me_api_auth_me_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -699,7 +699,7 @@ export interface operations {
             };
         };
     };
-    logout_auth_logout_post: {
+    logout_api_auth_logout_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -721,7 +721,7 @@ export interface operations {
             };
         };
     };
-    list_categories_categories_get: {
+    list_categories_api_categories_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -741,7 +741,7 @@ export interface operations {
             };
         };
     };
-    list_tags_tags_get: {
+    list_tags_api_tags_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -761,7 +761,7 @@ export interface operations {
             };
         };
     };
-    create_tag_tags_post: {
+    create_tag_api_tags_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -796,7 +796,7 @@ export interface operations {
             };
         };
     };
-    list_recipes_recipes_get: {
+    list_recipes_api_recipes_get: {
         parameters: {
             query?: {
                 page?: number;
@@ -832,7 +832,7 @@ export interface operations {
             };
         };
     };
-    create_recipe_recipes_post: {
+    create_recipe_api_recipes_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -867,7 +867,7 @@ export interface operations {
             };
         };
     };
-    delete_recipe_recipes__recipe_id__delete: {
+    delete_recipe_api_recipes__recipe_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -898,7 +898,7 @@ export interface operations {
             };
         };
     };
-    update_recipe_recipes__recipe_id__patch: {
+    update_recipe_api_recipes__recipe_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -935,7 +935,7 @@ export interface operations {
             };
         };
     };
-    add_favorite_recipes__recipe_id__favorite_post: {
+    add_favorite_api_recipes__recipe_id__favorite_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -968,7 +968,7 @@ export interface operations {
             };
         };
     };
-    remove_favorite_recipes__recipe_id__favorite_delete: {
+    remove_favorite_api_recipes__recipe_id__favorite_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -999,7 +999,7 @@ export interface operations {
             };
         };
     };
-    restore_recipe_recipes__recipe_id__restore_post: {
+    restore_recipe_api_recipes__recipe_id__restore_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1032,7 +1032,7 @@ export interface operations {
             };
         };
     };
-    permanently_delete_recipe_recipes__recipe_id__permanent_delete: {
+    permanently_delete_recipe_api_recipes__recipe_id__permanent_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -1063,7 +1063,7 @@ export interface operations {
             };
         };
     };
-    list_mine_recipes_mine_get: {
+    list_mine_api_recipes_mine_get: {
         parameters: {
             query?: {
                 category_items?: string[];
@@ -1098,7 +1098,7 @@ export interface operations {
             };
         };
     };
-    list_trashed_recipes_trashed_get: {
+    list_trashed_api_recipes_trashed_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1129,7 +1129,7 @@ export interface operations {
             };
         };
     };
-    get_recipe_recipes__slug__get: {
+    get_recipe_api_recipes__slug__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1162,7 +1162,7 @@ export interface operations {
             };
         };
     };
-    list_favorites_users_me_favorites_get: {
+    list_favorites_api_users_me_favorites_get: {
         parameters: {
             query?: {
                 page?: number;
@@ -1198,7 +1198,7 @@ export interface operations {
             };
         };
     };
-    sign_upload_uploads_sign_post: {
+    sign_upload_api_uploads_sign_post: {
         parameters: {
             query?: never;
             header?: never;

@@ -35,7 +35,7 @@ async def _make_recipe(
 @pytest.mark.asyncio
 async def test_add_favorite(auth_client: AsyncClient, session: AsyncSession, user: User):
     recipe = await _make_recipe(session, user)
-    resp = await auth_client.post(f"/recipes/{recipe.id}/favorite")
+    resp = await auth_client.post(f"/api/recipes/{recipe.id}/favorite")
     assert resp.status_code == 200
     assert resp.json()["is_favorited"] is True
 
@@ -54,8 +54,8 @@ async def test_add_favorite(auth_client: AsyncClient, session: AsyncSession, use
 @pytest.mark.asyncio
 async def test_add_favorite_idempotent(auth_client: AsyncClient, session: AsyncSession, user: User):
     recipe = await _make_recipe(session, user)
-    await auth_client.post(f"/recipes/{recipe.id}/favorite")
-    resp = await auth_client.post(f"/recipes/{recipe.id}/favorite")
+    await auth_client.post(f"/api/recipes/{recipe.id}/favorite")
+    resp = await auth_client.post(f"/api/recipes/{recipe.id}/favorite")
     assert resp.status_code == 200
     assert resp.json()["is_favorited"] is True
 
@@ -63,7 +63,7 @@ async def test_add_favorite_idempotent(auth_client: AsyncClient, session: AsyncS
 @pytest.mark.asyncio
 async def test_add_favorite_unauthenticated(client: AsyncClient, session: AsyncSession, user: User):
     recipe = await _make_recipe(session, user)
-    resp = await client.post(f"/recipes/{recipe.id}/favorite")
+    resp = await client.post(f"/api/recipes/{recipe.id}/favorite")
     assert resp.status_code == 401
 
 
@@ -72,7 +72,7 @@ async def test_add_favorite_deleted_recipe(
     auth_client: AsyncClient, session: AsyncSession, user: User
 ):
     recipe = await _make_recipe(session, user, deleted=True)
-    resp = await auth_client.post(f"/recipes/{recipe.id}/favorite")
+    resp = await auth_client.post(f"/api/recipes/{recipe.id}/favorite")
     assert resp.status_code == 404
 
 
@@ -87,7 +87,7 @@ async def test_remove_favorite(auth_client: AsyncClient, session: AsyncSession, 
     session.add(UserFavorite(user_id=user.id, recipe_id=recipe.id))
     await session.commit()
 
-    resp = await auth_client.delete(f"/recipes/{recipe.id}/favorite")
+    resp = await auth_client.delete(f"/api/recipes/{recipe.id}/favorite")
     assert resp.status_code == 204
 
 
@@ -96,7 +96,7 @@ async def test_remove_favorite_not_existing_is_idempotent(
     auth_client: AsyncClient, session: AsyncSession, user: User
 ):
     recipe = await _make_recipe(session, user)
-    resp = await auth_client.delete(f"/recipes/{recipe.id}/favorite")
+    resp = await auth_client.delete(f"/api/recipes/{recipe.id}/favorite")
     assert resp.status_code == 204
 
 
@@ -105,7 +105,7 @@ async def test_remove_favorite_unauthenticated(
     client: AsyncClient, session: AsyncSession, user: User
 ):
     recipe = await _make_recipe(session, user)
-    resp = await client.delete(f"/recipes/{recipe.id}/favorite")
+    resp = await client.delete(f"/api/recipes/{recipe.id}/favorite")
     assert resp.status_code == 401
 
 
@@ -116,7 +116,7 @@ async def test_remove_favorite_unauthenticated(
 
 @pytest.mark.asyncio
 async def test_list_favorites_empty(auth_client: AsyncClient):
-    resp = await auth_client.get("/users/me/favorites")
+    resp = await auth_client.get("/api/users/me/favorites")
     assert resp.status_code == 200
     data = resp.json()
     assert data["items"] == []
@@ -132,7 +132,7 @@ async def test_list_favorites_returns_favorited_recipes(
     session.add(UserFavorite(user_id=user.id, recipe_id=r1.id))
     await session.commit()
 
-    resp = await auth_client.get("/users/me/favorites")
+    resp = await auth_client.get("/api/users/me/favorites")
     assert resp.status_code == 200
     data = resp.json()
     assert data["total"] == 1
@@ -149,14 +149,14 @@ async def test_list_favorites_excludes_soft_deleted(
     session.add(UserFavorite(user_id=user.id, recipe_id=recipe.id))
     await session.commit()
 
-    resp = await auth_client.get("/users/me/favorites")
+    resp = await auth_client.get("/api/users/me/favorites")
     assert resp.status_code == 200
     assert resp.json()["total"] == 0
 
 
 @pytest.mark.asyncio
 async def test_list_favorites_unauthenticated(client: AsyncClient):
-    resp = await client.get("/users/me/favorites")
+    resp = await client.get("/api/users/me/favorites")
     assert resp.status_code == 401
 
 
@@ -174,7 +174,7 @@ async def test_recipe_list_is_favorited_for_authenticated(
     session.add(UserFavorite(user_id=user.id, recipe_id=r1.id))
     await session.commit()
 
-    resp = await auth_client.get("/recipes")
+    resp = await auth_client.get("/api/recipes")
     assert resp.status_code == 200
     items = {item["id"]: item for item in resp.json()["items"]}
     assert items[r1.id]["is_favorited"] is True
@@ -186,7 +186,7 @@ async def test_recipe_list_is_favorited_null_for_anonymous(
     client: AsyncClient, session: AsyncSession, user: User
 ):
     recipe = await _make_recipe(session, user)
-    resp = await client.get("/recipes")
+    resp = await client.get("/api/recipes")
     assert resp.status_code == 200
     items = resp.json()["items"]
     matching = [i for i in items if i["id"] == recipe.id]
@@ -202,7 +202,7 @@ async def test_recipe_detail_is_favorited_for_authenticated(
     session.add(UserFavorite(user_id=user.id, recipe_id=recipe.id))
     await session.commit()
 
-    resp = await auth_client.get(f"/recipes/{recipe.slug}")
+    resp = await auth_client.get(f"/api/recipes/{recipe.slug}")
     assert resp.status_code == 200
     assert resp.json()["is_favorited"] is True
 
@@ -212,7 +212,7 @@ async def test_recipe_detail_is_favorited_false_when_not_in_favorites(
     auth_client: AsyncClient, session: AsyncSession, user: User
 ):
     recipe = await _make_recipe(session, user)
-    resp = await auth_client.get(f"/recipes/{recipe.slug}")
+    resp = await auth_client.get(f"/api/recipes/{recipe.slug}")
     assert resp.status_code == 200
     assert resp.json()["is_favorited"] is False
 
@@ -222,6 +222,6 @@ async def test_recipe_detail_is_favorited_null_for_anonymous(
     client: AsyncClient, session: AsyncSession, user: User
 ):
     recipe = await _make_recipe(session, user)
-    resp = await client.get(f"/recipes/{recipe.slug}")
+    resp = await client.get(f"/api/recipes/{recipe.slug}")
     assert resp.status_code == 200
     assert resp.json()["is_favorited"] is None

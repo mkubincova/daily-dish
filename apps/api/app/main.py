@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRouter
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
@@ -22,26 +23,30 @@ app = FastAPI(
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
-    same_site="none" if settings.environment == "production" else "lax",
+    same_site="lax",
     https_only=settings.environment == "production",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    # Production is same-origin via the Vercel proxy; only localhost origins needed for dev.
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
-app.include_router(categories_router)
-app.include_router(tags_router)
-app.include_router(recipes_router)
-app.include_router(favorites_router)
-app.include_router(uploads_router)
+api_router = APIRouter(prefix="/api")
+api_router.include_router(auth_router)
+api_router.include_router(categories_router)
+api_router.include_router(tags_router)
+api_router.include_router(recipes_router)
+api_router.include_router(favorites_router)
+api_router.include_router(uploads_router)
+app.include_router(api_router)
 
 
+# Health check kept at root so Railway's health probe does not require the /api prefix.
 @app.get("/health", tags=["health"])
 async def health() -> dict:
     return {"status": "ok"}

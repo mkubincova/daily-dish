@@ -6,7 +6,7 @@ from app.models.user import User
 
 @pytest.mark.asyncio
 async def test_sign_upload_requires_auth(client: AsyncClient):
-    resp = await client.post("/uploads/sign")
+    resp = await client.post("/api/uploads/sign")
     assert resp.status_code == 401
 
 
@@ -18,7 +18,7 @@ async def test_sign_upload_returns_params(auth_client: AsyncClient, user: User, 
     monkeypatch.setattr(cfg_module.settings, "cloudinary_api_key", "testkey")
     monkeypatch.setattr(cfg_module.settings, "cloudinary_api_secret", "testsecret")
 
-    resp = await auth_client.post("/uploads/sign")
+    resp = await auth_client.post("/api/uploads/sign")
     assert resp.status_code == 200
     data = resp.json()
     assert data["cloud_name"] == "testcloud"
@@ -39,7 +39,7 @@ async def test_sign_upload_signature_valid(auth_client: AsyncClient, monkeypatch
     monkeypatch.setattr(cfg_module.settings, "cloudinary_api_key", "testkey")
     monkeypatch.setattr(cfg_module.settings, "cloudinary_api_secret", "mysecret")
 
-    resp = await auth_client.post("/uploads/sign")
+    resp = await auth_client.post("/api/uploads/sign")
     data = resp.json()
 
     folder = data["folder"]

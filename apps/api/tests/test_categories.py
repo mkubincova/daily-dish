@@ -15,7 +15,7 @@ async def test_list_categories_anonymous(client: AsyncClient, session):
     session.add(item2)
     await session.commit()
 
-    resp = await client.get("/categories")
+    resp = await client.get("/api/categories")
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) == 1
@@ -34,7 +34,7 @@ async def test_categories_no_display_fields(client: AsyncClient, session):
     session.add(item)
     await session.commit()
 
-    resp = await client.get("/categories")
+    resp = await client.get("/api/categories")
     assert resp.status_code == 200
     data = resp.json()
     for cat_out in data:

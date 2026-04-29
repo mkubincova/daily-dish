@@ -7,7 +7,7 @@ Personal recipe app + portfolio project. Single developer, single primary user (
 - **Frontend:** Nuxt 3 (Vue 3, SSR), Pinia, Tailwind. Vitest + Playwright. Deployed on Vercel.
 - **Backend:** FastAPI (Python 3.12+), SQLModel, Pydantic v2, async. `uv` for packages, Ruff for lint/format, Pytest + httpx for tests. Deployed on Railway.
 - **DB:** Postgres (Railway) + Alembic migrations. `docker-compose` for local Postgres.
-- **Auth:** OAuth (GitHub + Google) via Authlib → HttpOnly Secure session cookies.
+- **Auth:** OAuth (GitHub + Google) via Authlib → HttpOnly `SameSite=Lax; Secure` session cookies. Browser traffic routes through the Nuxt proxy at `/api/**` so cookies are always first-party (same Vercel origin); privacy-strict browsers work correctly.
 - **Images:** Cloudinary — backend signs params, browser uploads direct. Store both `image_url` and `image_public_id`.
 - **API:** REST. FastAPI's OpenAPI → typed client via `openapi-typescript` at build time.
 

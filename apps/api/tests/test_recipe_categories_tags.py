@@ -38,7 +38,7 @@ async def test_create_recipe_with_categories_and_tags(
     tag = await _seed_tag(session, "christmas", user.id)
 
     resp = await auth_client.post(
-        "/recipes",
+        "/api/recipes",
         json={
             "title": "Soup Recipe",
             "is_public": True,
@@ -58,7 +58,7 @@ async def test_create_recipe_unknown_category_item_rejected(
 ):
     await _seed_taxonomy(session)
     resp = await auth_client.post(
-        "/recipes",
+        "/api/recipes",
         json={"title": "Bad Cat", "category_item_ids": ["nonexistent"]},
     )
     assert resp.status_code == 422
@@ -67,7 +67,7 @@ async def test_create_recipe_unknown_category_item_rejected(
 @pytest.mark.asyncio
 async def test_create_recipe_unknown_tag_rejected(auth_client: AsyncClient, session, user: User):
     resp = await auth_client.post(
-        "/recipes",
+        "/api/recipes",
         json={"title": "Bad Tag", "tag_ids": ["00000000-0000-0000-0000-000000000000"]},
     )
     assert resp.status_code == 422
@@ -80,7 +80,7 @@ async def test_update_replaces_associations(auth_client: AsyncClient, session, u
     tag2 = await _seed_tag(session, "easy", user.id)
 
     r = await auth_client.post(
-        "/recipes",
+        "/api/recipes",
         json={
             "title": "Salad",
             "category_item_ids": ["salad"],
@@ -91,7 +91,7 @@ async def test_update_replaces_associations(auth_client: AsyncClient, session, u
     recipe_id = r.json()["id"]
 
     r2 = await auth_client.patch(
-        f"/recipes/{recipe_id}",
+        f"/api/recipes/{recipe_id}",
         json={"category_item_ids": ["main"], "tag_ids": [tag2.id]},
     )
     assert r2.status_code == 200
@@ -108,13 +108,13 @@ async def test_soft_delete_leaves_associations(auth_client: AsyncClient, session
 
     await _seed_taxonomy(session)
     r = await auth_client.post(
-        "/recipes",
+        "/api/recipes",
         json={"title": "To Delete", "category_item_ids": ["soup"]},
     )
     assert r.status_code == 201
     recipe_id = r.json()["id"]
 
-    del_resp = await auth_client.delete(f"/recipes/{recipe_id}")
+    del_resp = await auth_client.delete(f"/api/recipes/{recipe_id}")
     assert del_resp.status_code == 204
 
     result = await session.exec(
@@ -137,7 +137,7 @@ async def test_list_filter_single_category(client: AsyncClient, session, user: U
     session.add(RecipeCategoryItem(recipe_id=salad_r.id, category_item_id="salad"))
     await session.commit()
 
-    resp = await client.get("/recipes?category_items=soup")
+    resp = await client.get("/api/recipes?category_items=soup")
     assert resp.status_code == 200
     slugs = [r["slug"] for r in resp.json()["items"]]
     assert "soup-1" in slugs
@@ -160,7 +160,7 @@ async def test_list_filter_or_within_group(client: AsyncClient, session, user: U
     session.add(RecipeCategoryItem(recipe_id=main_r.id, category_item_id="main"))
     await session.commit()
 
-    resp = await client.get("/recipes?category_items=soup,salad")
+    resp = await client.get("/api/recipes?category_items=soup,salad")
     assert resp.status_code == 200
     slugs = {r["slug"] for r in resp.json()["items"]}
     assert "soup-2" in slugs
@@ -187,7 +187,7 @@ async def test_list_filter_and_across_groups(client: AsyncClient, session, user:
     session.add(RecipeCategoryItem(recipe_id=only_soup.id, category_item_id="soup"))
     await session.commit()
 
-    resp = await client.get("/recipes?category_items=soup&category_items=vegetarian")
+    resp = await client.get("/api/recipes?category_items=soup&category_items=vegetarian")
     assert resp.status_code == 200
     slugs = {r["slug"] for r in resp.json()["items"]}
     assert "veg-soup-3" in slugs
@@ -200,7 +200,7 @@ async def test_list_filter_unknown_id_returns_empty(client: AsyncClient, session
     session.add(recipe)
     await session.commit()
 
-    resp = await client.get("/recipes?category_items=nonexistent_id")
+    resp = await client.get("/api/recipes?category_items=nonexistent_id")
     assert resp.status_code == 200
     assert resp.json()["items"] == []
 
@@ -213,7 +213,7 @@ async def test_mine_status_filter_published(auth_client: AsyncClient, session, u
     session.add(draft)
     await session.commit()
 
-    resp = await auth_client.get("/recipes/mine?status=published")
+    resp = await auth_client.get("/api/recipes/mine?status=published")
     assert resp.status_code == 200
     slugs = {r["slug"] for r in resp.json()}
     assert "pub-s1" in slugs
@@ -228,7 +228,7 @@ async def test_mine_status_filter_draft(auth_client: AsyncClient, session, user:
     session.add(draft)
     await session.commit()
 
-    resp = await auth_client.get("/recipes/mine?status=draft")
+    resp = await auth_client.get("/api/recipes/mine?status=draft")
     assert resp.status_code == 200
     slugs = {r["slug"] for r in resp.json()}
     assert "draft-s2" in slugs
@@ -253,7 +253,7 @@ async def test_mine_status_combined_with_category(auth_client: AsyncClient, sess
     session.add(RecipeCategoryItem(recipe_id=draft_soup.id, category_item_id="soup"))
     await session.commit()
 
-    resp = await auth_client.get("/recipes/mine?status=draft&category_items=main")
+    resp = await auth_client.get("/api/recipes/mine?status=draft&category_items=main")
     assert resp.status_code == 200
     slugs = {r["slug"] for r in resp.json()}
     assert "draft-main-s3" in slugs

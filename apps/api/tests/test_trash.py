@@ -37,13 +37,13 @@ def _active_recipe(user_id: str, **kwargs) -> Recipe:
 
 @pytest.mark.asyncio
 async def test_list_trashed_requires_auth(client: AsyncClient):
-    resp = await client.get("/recipes/trashed")
+    resp = await client.get("/api/recipes/trashed")
     assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_list_trashed_empty(auth_client: AsyncClient):
-    resp = await auth_client.get("/recipes/trashed")
+    resp = await auth_client.get("/api/recipes/trashed")
     assert resp.status_code == 200
     assert resp.json() == []
 
@@ -56,7 +56,7 @@ async def test_list_trashed_returns_deleted_recipes(auth_client: AsyncClient, se
     session.add_all([r1, r2, active])
     await session.commit()
 
-    resp = await auth_client.get("/recipes/trashed")
+    resp = await auth_client.get("/api/recipes/trashed")
     assert resp.status_code == 200
     data = resp.json()
     slugs = [r["slug"] for r in data]
@@ -74,7 +74,7 @@ async def test_list_trashed_only_own_recipes(
     session.add_all([mine, theirs])
     await session.commit()
 
-    resp = await auth_client.get("/recipes/trashed")
+    resp = await auth_client.get("/api/recipes/trashed")
     slugs = [r["slug"] for r in resp.json()]
     assert "mine-trash-abc" in slugs
     assert "theirs-trash-abc" not in slugs
@@ -89,12 +89,12 @@ async def test_restore_success(auth_client: AsyncClient, session, user: User):
     session.add(recipe)
     await session.commit()
 
-    resp = await auth_client.post(f"/recipes/{recipe.id}/restore")
+    resp = await auth_client.post(f"/api/recipes/{recipe.id}/restore")
     assert resp.status_code == 200
     assert resp.json()["slug"] == "restore-me-abc"
 
     # Verify it's no longer in trash and visible in active list
-    trash_resp = await auth_client.get("/recipes/trashed")
+    trash_resp = await auth_client.get("/api/recipes/trashed")
     slugs = [r["slug"] for r in trash_resp.json()]
     assert "restore-me-abc" not in slugs
 
@@ -105,7 +105,7 @@ async def test_restore_active_recipe_returns_409(auth_client: AsyncClient, sessi
     session.add(recipe)
     await session.commit()
 
-    resp = await auth_client.post(f"/recipes/{recipe.id}/restore")
+    resp = await auth_client.post(f"/api/recipes/{recipe.id}/restore")
     assert resp.status_code == 409
 
 
@@ -117,13 +117,13 @@ async def test_restore_other_users_recipe_returns_403(
     session.add(recipe)
     await session.commit()
 
-    resp = await auth_client.post(f"/recipes/{recipe.id}/restore")
+    resp = await auth_client.post(f"/api/recipes/{recipe.id}/restore")
     assert resp.status_code == 403
 
 
 @pytest.mark.asyncio
 async def test_restore_nonexistent_recipe_returns_404(auth_client: AsyncClient):
-    resp = await auth_client.post(f"/recipes/{new_uuid7()}/restore")
+    resp = await auth_client.post(f"/api/recipes/{new_uuid7()}/restore")
     assert resp.status_code == 404
 
 
@@ -137,13 +137,13 @@ async def test_permanent_delete_without_image(auth_client: AsyncClient, session,
     await session.commit()
 
     with patch("app.routers.uploads._destroy_cloudinary_image") as mock_destroy:
-        resp = await auth_client.delete(f"/recipes/{recipe.id}/permanent")
+        resp = await auth_client.delete(f"/api/recipes/{recipe.id}/permanent")
 
     assert resp.status_code == 204
     mock_destroy.assert_not_called()
 
     # Confirm it's gone from trash
-    trash = await auth_client.get("/recipes/trashed")
+    trash = await auth_client.get("/api/recipes/trashed")
     assert all(r["id"] != recipe.id for r in trash.json())
 
 
@@ -161,7 +161,7 @@ async def test_permanent_delete_with_image(auth_client: AsyncClient, session, us
     with patch(
         "app.routers.uploads._destroy_cloudinary_image", new_callable=AsyncMock
     ) as mock_destroy:
-        resp = await auth_client.delete(f"/recipes/{recipe.id}/permanent")
+        resp = await auth_client.delete(f"/api/recipes/{recipe.id}/permanent")
 
     assert resp.status_code == 204
     mock_destroy.assert_called_once_with("daily-dish/recipes/abc123")
@@ -181,7 +181,7 @@ async def test_permanent_delete_cloudinary_failure_still_deletes(
 
     # Patch the underlying SDK call so _destroy_cloudinary_image's error handling runs
     with patch("cloudinary.uploader.destroy", side_effect=Exception("Cloudinary down")):
-        resp = await auth_client.delete(f"/recipes/{recipe.id}/permanent")
+        resp = await auth_client.delete(f"/api/recipes/{recipe.id}/permanent")
 
     # Recipe deleted despite Cloudinary failure
     assert resp.status_code == 204
@@ -195,7 +195,7 @@ async def test_permanent_delete_active_recipe_returns_409(
     session.add(recipe)
     await session.commit()
 
-    resp = await auth_client.delete(f"/recipes/{recipe.id}/permanent")
+    resp = await auth_client.delete(f"/api/recipes/{recipe.id}/permanent")
     assert resp.status_code == 409
 
 
@@ -207,5 +207,5 @@ async def test_permanent_delete_other_users_recipe_returns_403(
     session.add(recipe)
     await session.commit()
 
-    resp = await auth_client.delete(f"/recipes/{recipe.id}/permanent")
+    resp = await auth_client.delete(f"/api/recipes/{recipe.id}/permanent")
     assert resp.status_code == 403

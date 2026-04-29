@@ -25,7 +25,7 @@ def set_session_cookie(response: Response, user_id: str) -> None:
         value=token,
         httponly=True,
         secure=is_prod,
-        samesite="none" if is_prod else "lax",
+        samesite="lax",
         max_age=60 * 60 * 24 * 30,  # 30 days
     )
 
@@ -36,7 +36,7 @@ def clear_session_cookie(response: Response) -> None:
         key=SESSION_COOKIE,
         httponly=True,
         secure=is_prod,
-        samesite="none" if is_prod else "lax",
+        samesite="lax",
     )
 
 
