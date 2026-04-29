@@ -57,6 +57,46 @@ async def test_tampered_cookie_rejected(client: AsyncClient, session, user: User
 
 
 @pytest.mark.asyncio
+async def test_oauth_login_redirect_uri_uses_forwarded_host(
+    monkeypatch: pytest.MonkeyPatch, client: AsyncClient
+):
+    """The OAuth redirect_uri must be built off X-Forwarded-Host so the
+    URL registered with the upstream provider (Vercel origin) matches
+    what gets sent in the authorize request."""
+    monkeypatch.setenv("GITHUB_CLIENT_ID", "test-client")
+    monkeypatch.setenv("GITHUB_CLIENT_SECRET", "test-secret")
+
+    from urllib.parse import parse_qs, urlparse
+
+    from authlib.integrations.starlette_client import OAuth
+
+    from app.routers import auth as auth_module
+
+    fresh_oauth = OAuth()
+    fresh_oauth.register(
+        name="github",
+        client_id="test-client",
+        client_secret="test-secret",
+        authorize_url="https://github.com/login/oauth/authorize",
+        access_token_url="https://github.com/login/oauth/access_token",
+        client_kwargs={"scope": "user:email"},
+    )
+    monkeypatch.setattr(auth_module, "oauth", fresh_oauth)
+
+    resp = await client.get(
+        "/api/auth/github/login",
+        headers={"x-forwarded-host": "daily-dish-dsfs.vercel.app"},
+        follow_redirects=False,
+    )
+    assert resp.status_code in (302, 307)
+    location = resp.headers["location"]
+    parsed = urlparse(location)
+    redirect_uri = parse_qs(parsed.query)["redirect_uri"][0]
+    assert "daily-dish-dsfs.vercel.app" in redirect_uri
+    assert redirect_uri.endswith("/api/auth/github/callback")
+
+
+@pytest.mark.asyncio
 async def test_upsert_creates_new_user(session):
     """Verify user upsert logic directly — new user gets created."""
     from sqlmodel import select

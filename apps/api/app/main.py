@@ -4,6 +4,7 @@ from fastapi.routing import APIRouter
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
+from app.middleware import ForwardedHostMiddleware
 from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
 from app.routers.favorites import router as favorites_router
@@ -35,6 +36,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Outermost: rewrite Host from X-Forwarded-Host before any handler builds a URL.
+app.add_middleware(ForwardedHostMiddleware)
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
