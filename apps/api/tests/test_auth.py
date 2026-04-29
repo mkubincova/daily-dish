@@ -85,7 +85,10 @@ async def test_oauth_login_redirect_uri_uses_forwarded_host(
 
     resp = await client.get(
         "/api/auth/github/login",
-        headers={"x-forwarded-host": "daily-dish-dsfs.vercel.app"},
+        headers={
+            "x-original-host": "daily-dish-dsfs.vercel.app",
+            "x-original-proto": "https",
+        },
         follow_redirects=False,
     )
     assert resp.status_code in (302, 307)
