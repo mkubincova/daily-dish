@@ -68,3 +68,7 @@ Hook activation requires `npm install` at the repo root (Husky's `prepare` scrip
 ## Design decisions
 
 Architecture decisions (separated deploys, REST+OpenAPI, SQLModel, HttpOnly cookies, etc.) are documented in [`openspec/changes/archive/2026-04-24-add-v1-mvp/design.md`](openspec/changes/archive/2026-04-24-add-v1-mvp/design.md).
+
+## Attribution
+
+Favicon graphics: [1f958.svg](https://github.com/twitter/twemoji/blob/master/assets/svg/1f958.svg) by Twitter, Inc and other contributors — [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).

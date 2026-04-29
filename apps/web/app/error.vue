@@ -2,6 +2,8 @@
 const props = defineProps<{
 	error: { statusCode: number; statusMessage: string };
 }>();
+
+useSeoMeta({ title: "Daily Dish" });
 </script>
 
 <template>
