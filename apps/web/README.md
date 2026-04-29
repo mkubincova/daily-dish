@@ -25,16 +25,17 @@ Do **not** add any Cloudinary secrets here — those stay server-side in the API
 
 ## OpenAPI codegen
 
-The frontend uses a typed client generated from the backend's OpenAPI spec.
+The frontend uses a typed client generated from the backend's OpenAPI spec. The generated file is committed at `types/api.d.ts` and is what the build uses.
+
+**Whenever the backend API schema changes, regenerate locally and commit the result:**
 
 ```bash
-# Regenerate types (requires the API to be running)
+# Backend must be running on http://localhost:8000
 npm run codegen
+git add types/api.d.ts
 ```
 
-The generated file is committed to `types/api.d.ts` so CI can verify the client is up to date.
-
-The `npm run build` command runs codegen first, and **CI fails if codegen fails** (i.e. if the backend is unreachable or the schema breaks).
+Codegen is **not** part of `npm run build` — Vercel has no backend to fetch from. If you forget to regenerate after a backend change, the frontend will type-check against a stale schema.
 
 ## Linting
 
@@ -53,4 +54,4 @@ npm run build
 
 - Set root directory to `apps/web` in Vercel project settings
 - Set `NUXT_PUBLIC_API_URL` to your Railway backend URL
-- Vercel automatically runs `npm run build` (which includes codegen)
+- Vercel runs `npm run build`; codegen is **not** in the build, so make sure `types/api.d.ts` is up to date before pushing
