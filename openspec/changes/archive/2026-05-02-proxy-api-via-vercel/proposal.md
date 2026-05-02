@@ -6,7 +6,7 @@ Buying a custom domain and sharing a parent (e.g. `app.example.com` + `api.examp
 
 ## What Changes
 
-- Route all browser-to-API traffic through the Vercel deployment via a Nuxt `routeRules` proxy on `/api/**`, so the auth cookie is set on — and read from — the same origin the frontend lives on.
+- Route all browser-to-API traffic through the Vercel deployment via a Nuxt server route at `apps/web/server/routes/api/[...path].ts` that uses h3's `proxyRequest` to forward `/api/**` to the Railway origin, so the auth cookie is set on — and read from — the same origin the frontend lives on. The proxy uses `redirect: "manual"` so OAuth redirects flow back to the browser instead of being followed server-side, and injects bespoke `x-original-host` / `x-original-proto` headers so the API can reconstruct the original frontend origin.
 - **BREAKING** for browsers: switch the production session cookie from `SameSite=None` to `SameSite=Lax`. Existing sessions issued under the old cookie keep working until expiry but no new cross-site cookies are issued. (No DB or API contract break.)
 - Mount FastAPI routers under a `/api` prefix so the Vercel proxy forwards path-preserved requests (e.g. `/api/auth/github/callback`) and FastAPI's `request.url_for()` generates correct callback URLs.
 - Switch the frontend API client to call relative `/api/...` URLs instead of an absolute `NUXT_PUBLIC_API_URL`.
@@ -25,8 +25,8 @@ Buying a custom domain and sharing a parent (e.g. `app.example.com` + `api.examp
 
 ## Impact
 
-- **Frontend** (`apps/web/`): `nuxt.config.ts` gains a `routeRules` proxy and the API client base URL becomes relative. `NUXT_PUBLIC_API_URL` becomes a server-only var consumed by the proxy target rather than the browser.
-- **Backend** (`apps/api/`): all routers re-mounted under `/api` prefix; cookie `samesite` flag changes in `app/deps.py`; CORS allow-list trimmed in `app/main.py`. No DB migration required.
+- **Frontend** (`apps/web/`): a new server route `server/routes/api/[...path].ts` proxies `/api/**` to the backend via h3's `proxyRequest` (`redirect: "manual"`, plus `x-original-host` / `x-original-proto` headers); `runtimeConfig.public.apiUrl` defaults to `/api` (relative); `NUXT_PUBLIC_API_URL` is removed. Backend origin is sourced from `NUXT_API_PROXY_TARGET` (server-only).
+- **Backend** (`apps/api/`): all routers re-mounted under `/api` prefix via a single parent `APIRouter(prefix="/api")`; `/health` kept at root for Railway's health probe; cookie `samesite` flag changes in `app/deps.py`; CORS allow-list trimmed in `app/main.py`; new `ForwardedHostMiddleware` (`app/middleware.py`) rewrites the ASGI scope's host/scheme from `x-original-host` / `x-original-proto` so `request.url_for()` builds callback URLs against the Vercel origin. No DB migration required.
 - **OAuth providers**: new callback URLs must be added to the GitHub OAuth App and Google OAuth Client. Old callbacks can be left in place during the cutover and removed afterward.
 - **Performance**: every API request adds one Vercel edge → Railway hop (~50–150ms typical). Acceptable for a personal recipe app.
 - **Cost**: $0. Stays within Vercel and Railway free tiers.

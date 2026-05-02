@@ -24,16 +24,20 @@ The cleanest fix is to make the cookie first-party. Two options achieve that: (a
 
 ## Decisions
 
-### Decision 1: Vercel `routeRules` proxy over edge function or middleware
+### Decision 1: Nuxt server route using h3 `proxyRequest`
 
-Use Nuxt 3's built-in `routeRules` with a `proxy` directive on `/api/**` that forwards to the Railway origin with the `/api` prefix preserved.
+Implement the proxy as a Nuxt server route at `apps/web/server/routes/api/[...path].ts` that calls h3's `proxyRequest` to forward `/api/**` to the Railway origin with the `/api` prefix preserved. The handler sets `fetchOptions: { redirect: "manual" }` and injects custom forwarding headers (see Decision 6).
 
-**Why:** Nitro (Nuxt's server) handles `routeRules.proxy` natively at the edge with no code, and Vercel forwards standard `X-Forwarded-*` headers. Configuration lives in one file (`nuxt.config.ts`) alongside the rest of the deploy config.
+**Why:** A `routeRules.proxy` declaration in `nuxt.config.ts` was the original plan, but two requirements made a server route the better fit:
+1. **OAuth redirects must reach the browser, not be followed server-side.** The OAuth callback responds with a 302 to the frontend that carries `Set-Cookie`. Nitro's default proxy follows redirects server-side, which would cause the cookie to be set on the proxy-internal fetch and lost. `proxyRequest`'s `fetchOptions.redirect: "manual"` opts out of automatic redirect-following so the 302 is forwarded verbatim.
+2. **Custom forwarding headers must be injected per request.** The standard `X-Forwarded-*` headers are mangled by Railway's edge (see Decision 6); we need to attach `x-original-host` / `x-original-proto` ourselves, which `routeRules.proxy` does not support.
+
+Configuration of the backend origin still lives outside code — the handler reads `NUXT_API_PROXY_TARGET` at request time.
 
 **Alternatives considered:**
-- *Vercel `rewrites` in `vercel.json`*: rejected — the project removed `vercel.json` recently because it conflicted with monorepo root-directory detection (commit `3289130`), and Nuxt's built-in mechanism avoids that pitfall entirely.
-- *Custom Nitro middleware that fetches and re-emits*: rejected — re-implements something the framework already does, and risks breaking response streaming for large responses.
-- *A Vercel Edge Function*: rejected — extra surface area for a one-line config problem.
+- *`nuxt.config.ts` `routeRules` proxy* (the original proposal): rejected for the two reasons above.
+- *Vercel `rewrites` in `vercel.json`*: rejected — the project removed `vercel.json` recently because it conflicted with monorepo root-directory detection (commit `3289130`), and a Nitro-level mechanism avoids that pitfall entirely.
+- *A Vercel Edge Function*: rejected — extra surface area when a Nitro server route covers the same need.
 
 ### Decision 2: Preserve the `/api` path prefix end-to-end
 
@@ -76,6 +80,17 @@ The browser-side API client uses relative paths (`/api/recipes`) so it adopts wh
 **Alternatives considered:**
 - *Use absolute URLs everywhere with `NUXT_PUBLIC_API_URL=https://<vercel>/api`*: works but creates an unnecessary same-origin string at runtime and obscures intent.
 - *Use absolute URLs to Railway in the browser, with the cookie domain shared somehow*: not possible without a shared parent registrable domain, which is the whole reason for this change.
+
+### Decision 6: Custom `x-original-host` / `x-original-proto` headers (not `X-Forwarded-*`)
+
+The Nuxt proxy forwards the original frontend host and scheme to the API using bespoke headers — `x-original-host` and `x-original-proto` — and a small ASGI middleware on the API (`ForwardedHostMiddleware` in `apps/api/app/middleware.py`) rewrites the scope's `host` header and `scheme` from those headers before any handler runs. This is what makes `request.url_for("oauth_callback", ...)` build a callback URL against the Vercel origin instead of Railway's.
+
+**Why:** The original plan was to rely on the standard `X-Forwarded-Host` / `X-Forwarded-Proto` set, which uvicorn's `--proxy-headers` mode honors. In production this turned out not to work: Railway's edge (Fastly) normalizes the standard `X-Forwarded-*` headers and rewrites `X-Forwarded-Host` to its own origin before the request reaches the container, so `url_for()` produced Railway-flavoured callback URLs that GitHub's OAuth app rejected as not-registered. A bespoke header pair passes through the CDN untouched. The middleware is intentionally tiny and runs as the outermost layer so every downstream handler — including Authlib's URL construction — sees the rewritten host.
+
+**Alternatives considered:**
+- *Standard `X-Forwarded-Host` + `--proxy-headers`*: rejected — Fastly rewrites it. (Tried first; commit `39c2ab9` added the middleware honoring `X-Forwarded-Host`, but commit `1081a1f` switched to the custom-header pair after observing the rewrite in production.)
+- *Hard-code the callback base URL via env var*: rejected for the same reason as in Decision 2 — duplicates information already implicit in the request and creates a footgun.
+- *Have the API trust a configured `FRONTEND_URL` for callback construction*: rejected — entangles the OAuth callback URL with a separate env var whose semantics are "where to redirect after successful login" and would make multi-environment deploys (preview URLs) brittle.
 
 ## Risks / Trade-offs
 

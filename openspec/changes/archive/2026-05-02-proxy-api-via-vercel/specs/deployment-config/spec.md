@@ -11,21 +11,36 @@ The Nuxt frontend SHALL be configured to reverse-proxy all browser requests to `
 - **WHEN** the frontend is deployed to a different backend (e.g. a preview Railway service)
 - **THEN** updating the backend URL environment variable on the frontend deployment is sufficient to repoint the proxy with no code change
 
-### Requirement: API routes are mounted under `/api`
-The FastAPI application SHALL serve every public route under a `/api` prefix (e.g. `/api/auth/github/login`, `/api/recipes`) so that the frontend's path-preserving proxy reaches them and so that `request.url_for(...)` generates correct OAuth callback URLs.
+### Requirement: API honors original-host forwarding headers
+The FastAPI application SHALL apply an outermost ASGI middleware that rewrites the request's host and scheme from caller-supplied forwarding headers before any handler builds URLs from the request, so that URL construction (notably `request.url_for()` for OAuth callbacks) produces URLs against the original browser-facing origin rather than the upstream backend origin. The forwarding headers SHALL be a bespoke pair (not the standard `X-Forwarded-*` set), because the upstream CDN normalizes the standard headers.
 
-#### Scenario: Routes resolve under the `/api` prefix
-- **WHEN** any HTTP client requests a route at `<backend>/api/<path>`
+#### Scenario: OAuth callback URL is built against the frontend host
+- **WHEN** the proxy forwards a request to the backend with the original frontend host and scheme attached as forwarding headers
+- **THEN** any URL built from the request inside the backend (in particular the OAuth `redirect_uri`) uses the frontend host and scheme, not the backend's own host
+
+#### Scenario: Missing forwarding headers leave the request untouched
+- **WHEN** a request reaches the backend without the forwarding headers (e.g. a direct curl against the backend)
+- **THEN** the backend processes the request using its actual host and scheme without error
+
+### Requirement: API routes are mounted under `/api`
+The FastAPI application SHALL serve every application route (auth, recipes, categories, tags, favorites, uploads) under a `/api` prefix (e.g. `/api/auth/github/login`, `/api/recipes`) so that the frontend's path-preserving proxy reaches them and so that `request.url_for(...)` generates correct OAuth callback URLs. Infrastructure-only endpoints (the platform health probe at `/health`, plus the OpenAPI spec and docs at `/openapi.json` / `/docs` / `/redoc`) MAY remain at the bare root so platform health checks and direct schema introspection do not require the prefix.
+
+#### Scenario: Application routes resolve under the `/api` prefix
+- **WHEN** any HTTP client requests an application route at `<backend>/api/<path>`
 - **THEN** the route handler executes and responds with the expected payload
 
-#### Scenario: Routes do NOT resolve at the bare path
-- **WHEN** any HTTP client requests a route at `<backend>/<path>` without the `/api` prefix
+#### Scenario: Application routes do NOT resolve at the bare path
+- **WHEN** any HTTP client requests an application route (e.g. `<backend>/recipes`) without the `/api` prefix
 - **THEN** the response is HTTP 404
+
+#### Scenario: Health probe is reachable at the bare root
+- **WHEN** the platform requests `<backend>/health`
+- **THEN** the route handler executes and returns a 200 response indicating service health
 
 ## MODIFIED Requirements
 
 ### Requirement: Vercel monorepo configuration
-The repository SHALL configure the Vercel project to build and deploy only the Nuxt frontend from `apps/web` as the project root, and the Nuxt configuration at `apps/web/nuxt.config.ts` SHALL declare a `routeRules` proxy on `/api/**` that forwards to the backend origin.
+The repository SHALL configure the Vercel project to build and deploy only the Nuxt frontend from `apps/web` as the project root, and `apps/web` SHALL include a Nitro server route at `server/routes/api/[...path].ts` that proxies all `/api/**` browser requests to the backend origin (sourced from `NUXT_API_PROXY_TARGET`) with the `/api` prefix preserved, redirects forwarded to the browser rather than followed server-side, and original-host / original-scheme metadata propagated to the backend through forwarding headers that survive the upstream CDN.
 
 #### Scenario: Vercel detects Nuxt framework from monorepo
 - **WHEN** Vercel imports the GitHub repository
@@ -33,7 +48,7 @@ The repository SHALL configure the Vercel project to build and deploy only the N
 
 #### Scenario: Browser API calls reach the backend through the Vercel deployment
 - **WHEN** the deployed frontend is loaded in a browser and the application makes a request to `/api/auth/github/login`
-- **THEN** the Vercel deployment proxies the request to the backend, forwards standard `X-Forwarded-*` headers, and returns the backend's response to the browser
+- **THEN** the Vercel deployment proxies the request to the backend, propagates the original frontend host and scheme via forwarding headers that the backend uses to construct OAuth callback URLs, and returns the backend's response (including any `Set-Cookie` and `Location` headers from a 302 redirect) verbatim to the browser without following the redirect server-side
 
 ### Requirement: Deployment runbook
 The repository SHALL include a `DEPLOYMENT.md` at the repo root that provides a step-by-step guide for a first-time deploy, covering: Railway Postgres provisioning, Railway service setup and env vars, Vercel project setup and env vars (including the backend-origin variable consumed by the frontend proxy), GitHub OAuth app creation (with exact redirect URIs), Google OAuth app creation (with exact redirect URIs), Cloudinary configuration, and a post-deploy smoke test checklist that includes a sign-in test in a privacy-focused browser (e.g. DuckDuckGo).
