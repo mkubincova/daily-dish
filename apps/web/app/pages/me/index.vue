@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PhTrash } from "@phosphor-icons/vue";
+import { PhPlus, PhRecycle } from "@phosphor-icons/vue";
 import type { components } from "~~/types/api";
 
 type RecipeListItem = components["schemas"]["RecipeListItem"];
@@ -47,29 +47,40 @@ async function deleteRecipe(id: string) {
               to="/me/trash"
               class="dish-btn-secondary px-3 py-2 flex items-center gap-1.5"
             >
-              <PhTrash class="w-3.5 h-3.5" />
-              <span class="font-mono text-xs uppercase tracking-widest">Trash</span>
+              <PhRecycle class="w-3.5 h-3.5" />
+              <span class="font-mono text-xs uppercase tracking-widest"
+                >View Trash</span
+              >
             </NuxtLink>
-            <NuxtLink to="/r/new" class="dish-btn-primary px-4 py-2">
-              + New Recipe
+            <NuxtLink
+              to="/r/new"
+              class="dish-btn-primary px-3 py-2 flex items-center gap-1.5"
+            >
+              <PhPlus class="w-3.5 h-3.5" />
+              New Recipe
             </NuxtLink>
           </div>
         </div>
 
-        <div v-if="pending" class="font-mono text-sm text-dish-fg/50 py-8">Loading…</div>
-        <div v-else-if="!recipes?.length" class="font-mono text-sm text-dish-fg/50 py-8">
+        <div v-if="pending" class="font-mono text-sm text-dish-fg/50 py-8">
+          Loading…
+        </div>
+        <div
+          v-else-if="!recipes?.length"
+          class="font-mono text-sm text-dish-fg/50 py-8"
+        >
           No recipes found.
         </div>
 
         <div v-else class="space-y-2">
           <RecipeListItem
-            v-for="recipe in recipes"
+            v-for="(recipe, index) in recipes"
             :key="recipe.id"
             :recipe="recipe"
+            :index="index"
             @delete="deleteRecipe"
           />
         </div>
-
       </div>
     </div>
   </div>

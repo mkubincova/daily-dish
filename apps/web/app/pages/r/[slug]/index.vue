@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhPencilSimple, PhTrash } from "@phosphor-icons/vue";
 import type { components } from "~~/types/api";
 
 type RecipeOut = components["schemas"]["RecipeOut"];
@@ -57,6 +58,10 @@ const tagNames = computed<string[]>(
 	() => recipe.value?.tags.map((t) => t.name) ?? [],
 );
 
+const cardAccent = computed(() =>
+	accentColorForRecipe(categoryItemIds.value, 0),
+);
+
 const formattedDate = computed(() =>
 	recipe.value
 		? new Date(recipe.value.created_at).toLocaleDateString("en-GB", {
@@ -75,7 +80,8 @@ const formattedDate = computed(() =>
   >
     <!-- Desktop: fixed image column with favorite overlay -->
     <div
-      class="hidden lg:block lg:w-2/5 xl:w-1/2 shrink-0 bg-dish-bg relative overflow-hidden"
+      class="hidden lg:block lg:w-2/5 xl:w-1/2 shrink-0 relative overflow-hidden"
+      :style="recipe.image_url ? {} : { backgroundColor: `${cardAccent}35` }"
     >
       <img
         v-if="recipe.image_url"
@@ -89,7 +95,7 @@ const formattedDate = computed(() =>
       >
         🍽️
       </div>
-      <div class="absolute top-3 right-3">
+      <div class="absolute top-3 right-3 scale-125 origin-top-right">
         <FavoriteButton :recipe-id="recipe.id" />
       </div>
     </div>
@@ -98,7 +104,8 @@ const formattedDate = computed(() =>
     <div class="flex-1 min-w-0 lg:overflow-y-auto">
       <!-- Mobile image/placeholder with favorite overlay -->
       <div
-        class="lg:hidden relative w-full aspect-video overflow-hidden bg-dish-bg"
+        class="lg:hidden relative w-full aspect-video overflow-hidden"
+        :style="recipe.image_url ? {} : { backgroundColor: `${cardAccent}35` }"
       >
         <img
           v-if="recipe.image_url"
@@ -112,34 +119,36 @@ const formattedDate = computed(() =>
         >
           🍽️
         </div>
-        <div class="absolute top-2.5 right-2.5">
+        <div class="absolute top-2.5 right-2.5 scale-125 origin-top-right">
           <FavoriteButton :recipe-id="recipe.id" />
         </div>
       </div>
 
       <div class="px-4 md:px-8 lg:px-10 py-8">
         <!-- Title + owner actions -->
-        <div class="flex items-start justify-between gap-4 mb-1">
+        <div class="mb-1">
+          <div v-if="isOwner" class="flex gap-2 justify-end shrink-0 mb-2">
+            <NuxtLink
+              :to="`/r/${recipe.slug}/edit`"
+              class="dish-btn-secondary px-3 py-1.5 flex items-center gap-1.5"
+            >
+              <PhPencilSimple class="w-3.5 h-3.5" />
+              Edit
+            </NuxtLink>
+            <button
+              type="button"
+              class="dish-btn-danger px-3 py-1.5 flex items-center gap-1.5"
+              @click="confirmDelete"
+            >
+              <PhTrash class="w-3.5 h-3.5" />
+              Delete
+            </button>
+          </div>
           <h1
             class="font-display font-black text-3xl md:text-4xl leading-tight text-dish-fg"
           >
             {{ recipe.title }}
           </h1>
-          <div v-if="isOwner" class="flex gap-2 shrink-0">
-            <NuxtLink
-              :to="`/r/${recipe.slug}/edit`"
-              class="dish-btn-secondary px-3 py-1.5"
-            >
-              Edit
-            </NuxtLink>
-            <button
-              type="button"
-              class="dish-btn-danger px-3 py-1.5"
-              @click="confirmDelete"
-            >
-              Delete
-            </button>
-          </div>
         </div>
 
         <!-- Author + date -->
@@ -245,24 +254,26 @@ const formattedDate = computed(() =>
           >
             Ingredients
           </h2>
-          <ul class="space-y-2">
+          <ul class="space-y-2 pl-5 list-disc text-sm">
             <li
               v-for="ing in recipe.ingredients"
               :key="ing.id"
-              class="flex gap-3 leading-relaxed"
+              class="leading-relaxed marker:text-dish-primary marker:text-base"
             >
-              <span
-                v-if="ing.quantity || ing.unit"
-                class="font-mono text-sm text-dish-fg/60 shrink-0 w-20"
-              >
-                {{ ing.quantity }} {{ ing.unit }}
-              </span>
-              <span class="text-sm text-dish-fg">
-                {{ ing.name
-                }}<span v-if="ing.notes" class="text-dish-fg/60"
-                  >, {{ ing.notes }}</span
-                >
-              </span>
+              <div class="flex gap-3">
+                <span class="font-mono text-sm text-dish-fg/60 shrink-0 w-20">
+                  <span v-if="ing.quantity || ing.unit"
+                    >{{ ing.quantity }} {{ ing.unit }}</span
+                  >
+                  <span v-else>—</span>
+                </span>
+                <span class="text-sm text-dish-fg">
+                  {{ ing.name
+                  }}<span v-if="ing.notes" class="text-dish-fg/60 italic">
+                    ({{ ing.notes }})</span
+                  >
+                </span>
+              </div>
             </li>
           </ul>
         </section>
@@ -274,15 +285,15 @@ const formattedDate = computed(() =>
           >
             Steps
           </h2>
-          <ol class="space-y-6">
+          <ol class="space-y-3">
             <li
               v-for="step in recipe.steps"
               :key="String(step.position)"
-              class="flex gap-4"
+              class="flex items-center gap-3"
             >
               <span
-                class="font-display font-black text-dish-primary text-xl shrink-0 w-6 mt-0.5"
-                >{{ step.position }}.</span
+                class="font-display font-black text-dish-primary text-2xl shrink-0 w-8 h-8 rounded-full bg-dish-surface flex items-center justify-center shadow-md pb-1.5"
+                >{{ step.position }}</span
               >
               <p class="text-dish-fg leading-relaxed">{{ step.text }}</p>
             </li>

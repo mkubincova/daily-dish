@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import { PhPencilSimple, PhTrash } from "@phosphor-icons/vue";
 import type { components } from "~~/types/api";
 
 type RecipeListItem = components["schemas"]["RecipeListItem"];
 
-defineProps<{ recipe: RecipeListItem }>();
+const props = defineProps<{ recipe: RecipeListItem; index?: number }>();
 const emit = defineEmits<{ delete: [id: string] }>();
+
+const cardAccent = computed(() =>
+	accentColorForRecipe(props.recipe.category_item_ids ?? [], props.index ?? 0),
+);
 </script>
 
 <template>
@@ -20,7 +25,8 @@ const emit = defineEmits<{ delete: [id: string] }>();
       />
       <div
         v-else
-        class="w-14 h-14 bg-dish-bg flex items-center justify-center text-2xl shrink-0"
+        class="w-14 h-14 flex items-center justify-center text-2xl shrink-0"
+        :style="{ backgroundColor: `${cardAccent}35` }"
       >
         🍽️
       </div>
@@ -40,14 +46,19 @@ const emit = defineEmits<{ delete: [id: string] }>();
       </div>
     </div>
     <div class="flex gap-2 shrink-0">
-      <NuxtLink :to="`/r/${recipe.slug}/edit`" class="dish-btn-secondary px-3 py-1.5">
+      <NuxtLink
+        :to="`/r/${recipe.slug}/edit`"
+        class="dish-btn-secondary px-3 py-1.5 flex items-center gap-1.5"
+      >
+        <PhPencilSimple class="w-3.5 h-3.5" />
         Edit
       </NuxtLink>
       <button
         type="button"
-        class="dish-btn-danger px-3 py-1.5"
+        class="dish-btn-danger px-3 py-1.5 flex items-center gap-1.5"
         @click="emit('delete', recipe.id)"
       >
+        <PhTrash class="w-3.5 h-3.5" />
         Delete
       </button>
     </div>
