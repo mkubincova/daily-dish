@@ -1,4 +1,4 @@
-.PHONY: dev db-up db-down db-migrate db-reset test lint
+.PHONY: dev db-up db-down db-migrate db-reset test lint typecheck
 
 dev:
 	uv run uvicorn app.main:app --reload --port 8000
@@ -21,3 +21,6 @@ test:
 
 lint:
 	uv run ruff check app/ tests/ && uv run ruff format --check app/ tests/
+
+typecheck:
+	uv run basedpyright

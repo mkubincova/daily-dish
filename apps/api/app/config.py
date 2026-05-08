@@ -20,4 +20,5 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 
-settings = Settings()
+# pydantic-settings populates fields from env at runtime; pyright doesn't see this.
+settings = Settings()  # pyright: ignore[reportCallIssue]

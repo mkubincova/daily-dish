@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from sqlmodel import select
+from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database import get_session
@@ -38,7 +38,7 @@ async def list_favorites(
 
     count_stmt = (
         select(Recipe)
-        .join(UserFavorite, UserFavorite.recipe_id == Recipe.id)
+        .join(UserFavorite, col(UserFavorite.recipe_id) == col(Recipe.id))
         .where(*base_conditions)
     )
     count_result = await session.exec(count_stmt)
@@ -46,7 +46,7 @@ async def list_favorites(
 
     stmt = (
         select(Recipe)
-        .join(UserFavorite, UserFavorite.recipe_id == Recipe.id)
+        .join(UserFavorite, col(UserFavorite.recipe_id) == col(Recipe.id))
         .where(*base_conditions)
         .order_by(UserFavorite.created_at.desc())  # type: ignore[union-attr]
         .offset((page - 1) * page_size)

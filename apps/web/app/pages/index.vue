@@ -2,11 +2,9 @@
 import type { components } from "~~/types/api";
 
 type Recipe = components["schemas"]["RecipeListItem"];
-type PaginatedRecipes = components["schemas"]["PaginatedRecipes"];
 
-const config = useRuntimeConfig();
 const route = useRoute();
-const { toApiParams } = useRecipeFilters();
+const { filters } = useRecipeFilters();
 const favoritesStore = useFavoritesStore();
 
 const {
@@ -14,10 +12,25 @@ const {
 	pending,
 	error,
 	refresh,
-} = await useFetch<PaginatedRecipes>(`${config.public.apiUrl}/recipes`, {
-	credentials: "include" as RequestCredentials,
-	query: computed(() => toApiParams()),
-});
+} = await useAsyncData(
+	"recipes:list",
+	async () => {
+		const f = filters.value;
+		const { data, error: apiError } = await $api.GET("/api/recipes", {
+			params: {
+				query: {
+					...(f.categoryItems.length > 0 && {
+						category_items: f.categoryItems.map((g) => g.join(",")),
+					}),
+					...(f.tags.length > 0 && { tags: f.tags }),
+				},
+			},
+		});
+		if (apiError) throw apiError;
+		return data;
+	},
+	{ watch: [filters] },
+);
 
 watch(
 	() => route.query,

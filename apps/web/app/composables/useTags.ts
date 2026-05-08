@@ -3,12 +3,12 @@ import type { components } from "~~/types/api";
 type Tag = components["schemas"]["TagOut"];
 
 export function useTags() {
-	const config = useRuntimeConfig();
 	const tags = useState<Tag[]>("tags", () => []);
 	const loaded = useState<boolean>("tags:loaded", () => false);
 
 	async function fetch() {
-		const data = await $fetch<Tag[]>(`${config.public.apiUrl}/tags`);
+		const { data, error } = await $api.GET("/api/tags");
+		if (error) throw error;
 		tags.value = data;
 		loaded.value = true;
 	}
@@ -18,13 +18,12 @@ export function useTags() {
 	}
 
 	async function createTag(name: string): Promise<Tag> {
-		const tag = await $fetch<Tag>(`${config.public.apiUrl}/tags`, {
-			method: "POST",
+		const { data, error } = await $api.POST("/api/tags", {
 			body: { name },
-			credentials: "include",
 		});
+		if (error) throw error;
 		await fetch();
-		return tag;
+		return data;
 	}
 
 	return { tags, fetch, ensureLoaded, createTag };

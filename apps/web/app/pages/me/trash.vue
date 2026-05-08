@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { PhArrowCounterClockwise, PhTrash } from "@phosphor-icons/vue";
-import type { components } from "~~/types/api";
-
-type TrashedRecipeItem = components["schemas"]["TrashedRecipeItem"];
 
 definePageMeta({ middleware: "auth" });
 
-const config = useRuntimeConfig();
-
-const { data: trashed, refresh } = await useFetch<TrashedRecipeItem[]>(
-	`${config.public.apiUrl}/recipes/trashed`,
-	{ credentials: "include" as RequestCredentials },
+const { data: trashed, refresh } = await useAsyncData(
+	"recipes:trashed",
+	async () => {
+		const { data, error: apiError } = await $api.GET("/api/recipes/trashed");
+		if (apiError) throw apiError;
+		return data;
+	},
 );
 
 const restoringId = ref<string | null>(null);
@@ -19,9 +18,8 @@ const deletingId = ref<string | null>(null);
 async function restoreRecipe(id: string) {
 	restoringId.value = id;
 	try {
-		await $fetch(`${config.public.apiUrl}/recipes/${id}/restore`, {
-			method: "POST",
-			credentials: "include",
+		await $api.POST("/api/recipes/{recipe_id}/restore", {
+			params: { path: { recipe_id: id } },
 		});
 		await refresh();
 	} finally {
@@ -34,9 +32,8 @@ async function permanentlyDelete(id: string) {
 		return;
 	deletingId.value = id;
 	try {
-		await $fetch(`${config.public.apiUrl}/recipes/${id}/permanent`, {
-			method: "DELETE",
-			credentials: "include",
+		await $api.DELETE("/api/recipes/{recipe_id}/permanent", {
+			params: { path: { recipe_id: id } },
 		});
 		await refresh();
 	} finally {

@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import delete
-from sqlmodel import select
+from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database import get_session
@@ -196,7 +196,9 @@ def _item_category(assoc: RecipeCategoryItem) -> str:
 
 async def _load_ingredients(session: AsyncSession, recipe_id: str) -> list[Ingredient]:
     result = await session.exec(
-        select(Ingredient).where(Ingredient.recipe_id == recipe_id).order_by(Ingredient.position)
+        select(Ingredient)
+        .where(col(Ingredient.recipe_id) == recipe_id)
+        .order_by(col(Ingredient.position))
     )
     return list(result.all())
 
@@ -204,8 +206,8 @@ async def _load_ingredients(session: AsyncSession, recipe_id: str) -> list[Ingre
 async def _load_category_assocs(session: AsyncSession, recipe_id: str) -> list[RecipeCategoryItem]:
     result = await session.exec(
         select(RecipeCategoryItem, CategoryItem)
-        .join(CategoryItem, RecipeCategoryItem.category_item_id == CategoryItem.id)
-        .where(RecipeCategoryItem.recipe_id == recipe_id)
+        .join(CategoryItem, col(RecipeCategoryItem.category_item_id) == col(CategoryItem.id))
+        .where(col(RecipeCategoryItem.recipe_id) == recipe_id)
     )
     rows = result.all()
     # Attach category_item onto assoc for later use in _item_category
@@ -219,8 +221,8 @@ async def _load_category_assocs(session: AsyncSession, recipe_id: str) -> list[R
 async def _load_tag_assocs(session: AsyncSession, recipe_id: str) -> list[tuple[RecipeTag, Tag]]:
     result = await session.exec(
         select(RecipeTag, Tag)
-        .join(Tag, RecipeTag.tag_id == Tag.id)
-        .where(RecipeTag.recipe_id == recipe_id)
+        .join(Tag, col(RecipeTag.tag_id) == col(Tag.id))
+        .where(col(RecipeTag.recipe_id) == recipe_id)
     )
     return list(result.all())
 
@@ -280,10 +282,10 @@ async def _validate_and_replace_associations(
             )
 
     await session.exec(  # type: ignore[arg-type]
-        delete(RecipeCategoryItem).where(RecipeCategoryItem.recipe_id == recipe_id)
+        delete(RecipeCategoryItem).where(col(RecipeCategoryItem.recipe_id) == recipe_id)
     )
     await session.exec(  # type: ignore[arg-type]
-        delete(RecipeTag).where(RecipeTag.recipe_id == recipe_id)
+        delete(RecipeTag).where(col(RecipeTag.recipe_id) == recipe_id)
     )
     for item_id in category_item_ids:
         session.add(RecipeCategoryItem(recipe_id=recipe_id, category_item_id=item_id))
@@ -502,8 +504,8 @@ async def remove_favorite(
 ) -> None:
     await session.exec(  # type: ignore[arg-type]
         delete(UserFavorite).where(
-            UserFavorite.user_id == current_user.id,
-            UserFavorite.recipe_id == recipe_id,
+            col(UserFavorite.user_id) == current_user.id,
+            col(UserFavorite.recipe_id) == recipe_id,
         )
     )
     await session.commit()

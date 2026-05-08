@@ -1,23 +1,35 @@
 <script setup lang="ts">
 import { PhPlus, PhRecycle } from "@phosphor-icons/vue";
-import type { components } from "~~/types/api";
-
-type RecipeListItem = components["schemas"]["RecipeListItem"];
 
 definePageMeta({ middleware: "auth" });
 
-const config = useRuntimeConfig();
 const route = useRoute();
-const { toApiParams } = useRecipeFilters();
+const { filters } = useRecipeFilters();
 
 const {
 	data: recipes,
 	pending,
 	refresh,
-} = await useFetch<RecipeListItem[]>(`${config.public.apiUrl}/recipes/mine`, {
-	credentials: "include" as RequestCredentials,
-	query: computed(() => toApiParams()),
-});
+} = await useAsyncData(
+	"recipes:mine",
+	async () => {
+		const f = filters.value;
+		const { data, error: apiError } = await $api.GET("/api/recipes/mine", {
+			params: {
+				query: {
+					...(f.categoryItems.length > 0 && {
+						category_items: f.categoryItems.map((g) => g.join(",")),
+					}),
+					...(f.tags.length > 0 && { tags: f.tags }),
+					...(f.status !== "all" && { status: f.status }),
+				},
+			},
+		});
+		if (apiError) throw apiError;
+		return data;
+	},
+	{ watch: [filters] },
+);
 
 watch(
 	() => route.query,
@@ -26,9 +38,8 @@ watch(
 
 async function deleteRecipe(id: string) {
 	if (!confirm("Move this recipe to trash?")) return;
-	await $fetch(`${config.public.apiUrl}/recipes/${id}`, {
-		method: "DELETE",
-		credentials: "include",
+	await $api.DELETE("/api/recipes/{recipe_id}", {
+		params: { path: { recipe_id: id } },
 	});
 	refresh();
 }

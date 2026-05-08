@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import { PhPencilSimple, PhTrash } from "@phosphor-icons/vue";
-import type { components } from "~~/types/api";
-
-type RecipeOut = components["schemas"]["RecipeOut"];
 
 const route = useRoute();
 const config = useRuntimeConfig();
 const authStore = useAuthStore();
 const favoritesStore = useFavoritesStore();
 
-const { data: recipe, error } = await useFetch<RecipeOut>(
-	`${config.public.apiUrl}/recipes/${route.params.slug}`,
-	{ credentials: "include" as RequestCredentials },
+const slug = route.params.slug as string;
+
+const { data: recipe, error } = await useAsyncData(
+	`recipe:${slug}`,
+	async () => {
+		const { data, error: apiError } = await $api.GET("/api/recipes/{slug}", {
+			params: { path: { slug } },
+		});
+		if (apiError) throw apiError;
+		return data;
+	},
 );
 
 if (recipe.value) favoritesStore.seed([recipe.value]);
@@ -43,9 +48,8 @@ const isOwner = computed(() =>
 async function confirmDelete() {
 	if (!recipe.value) return;
 	if (!confirm("Move this recipe to trash?")) return;
-	await $fetch(`${config.public.apiUrl}/recipes/${recipe.value.id}`, {
-		method: "DELETE",
-		credentials: "include",
+	await $api.DELETE("/api/recipes/{recipe_id}", {
+		params: { path: { recipe_id: recipe.value.id } },
 	});
 	await navigateTo("/me");
 }

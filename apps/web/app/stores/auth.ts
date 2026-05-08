@@ -1,12 +1,7 @@
 import { defineStore } from "pinia";
+import type { components } from "~~/types/api";
 
-interface User {
-	id: string;
-	email: string;
-	name: string;
-	avatar_url: string | null;
-	provider: string;
-}
+type User = components["schemas"]["UserPublic"];
 
 export const useAuthStore = defineStore("auth", () => {
 	const user = ref<User | null>(null);
@@ -14,15 +9,11 @@ export const useAuthStore = defineStore("auth", () => {
 
 	const isAuthenticated = computed(() => user.value !== null);
 
-	const config = useRuntimeConfig();
-	const apiUrl = config.public.apiUrl;
-
 	async function fetchMe() {
 		pending.value = true;
 		try {
-			const data = await $fetch<User>(`${apiUrl}/auth/me`, {
-				credentials: "include",
-			});
+			const { data, error } = await $api.GET("/api/auth/me");
+			if (error) throw error;
 			user.value = data;
 		} catch {
 			user.value = null;
@@ -32,20 +23,17 @@ export const useAuthStore = defineStore("auth", () => {
 	}
 
 	async function logout() {
-		await $fetch(`${apiUrl}/auth/logout`, {
-			method: "POST",
-			credentials: "include",
-		}).catch(() => {});
+		await $api.POST("/api/auth/logout").catch(() => {});
 		user.value = null;
 		await navigateTo("/");
 	}
 
 	function loginWithGithub() {
-		window.location.href = `${apiUrl}/auth/github/login`;
+		window.location.href = "/api/auth/github/login";
 	}
 
 	function loginWithGoogle() {
-		window.location.href = `${apiUrl}/auth/google/login`;
+		window.location.href = "/api/auth/google/login";
 	}
 
 	return {

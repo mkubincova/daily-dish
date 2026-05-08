@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import type { components } from "~~/types/api";
 import type { RecipeFormData, RecipeFormSubmitData } from "~~/types/forms";
-
-type RecipeOut = components["schemas"]["RecipeOut"];
 
 definePageMeta({ middleware: "auth" });
 
 const route = useRoute();
-const config = useRuntimeConfig();
 
-const { data: recipe, error: fetchError } = await useFetch<RecipeOut>(
-	`${config.public.apiUrl}/recipes/${route.params.slug}`,
-	{ credentials: "include" as RequestCredentials },
+const slug = route.params.slug as string;
+
+const { data: recipe, error: fetchError } = await useAsyncData(
+	`recipe:edit:${slug}`,
+	async () => {
+		const { data, error: apiError } = await $api.GET("/api/recipes/{slug}", {
+			params: { path: { slug } },
+		});
+		if (apiError) throw apiError;
+		return data;
+	},
 );
 
 if (fetchError.value || !recipe.value) {
@@ -52,25 +56,27 @@ const error = ref("");
 async function handleSubmit(data: RecipeFormSubmitData) {
 	if (!recipe.value) return;
 	error.value = "";
-	try {
-		await $fetch(`${config.public.apiUrl}/recipes/${recipe.value.id}`, {
-			method: "PATCH",
-			credentials: "include",
-			body: {
-				...data,
-				servings: data.servings || null,
-				prep_time_minutes: data.prep_time_minutes || null,
-				cook_time_minutes: data.cook_time_minutes || null,
-				source_url: data.source_url || null,
-				image_url: data.image_url || null,
-				image_public_id: data.image_public_id || null,
-			},
-		});
-		await navigateTo(`/r/${recipe.value.slug}`);
-	} catch (e) {
-		const detail = (e as { data?: { detail?: string } })?.data?.detail;
+	const { error: apiError } = await $api.PATCH("/api/recipes/{recipe_id}", {
+		params: { path: { recipe_id: recipe.value.id } },
+		body: {
+			...data,
+			servings: data.servings || null,
+			prep_time_minutes: data.prep_time_minutes || null,
+			cook_time_minutes: data.cook_time_minutes || null,
+			source_url: data.source_url || null,
+			image_url: data.image_url || null,
+			image_public_id: data.image_public_id || null,
+			// Backend types steps as list[dict[str, Any]]; cast through the open
+			// shape until the backend is tightened to a typed RecipeStep model.
+			steps: data.steps as unknown as { [x: string]: unknown }[],
+		},
+	});
+	if (apiError) {
+		const detail = (apiError as { detail?: string })?.detail;
 		error.value = detail ?? "Failed to save recipe.";
+		return;
 	}
+	await navigateTo(`/r/${recipe.value.slug}`);
 }
 </script>
 

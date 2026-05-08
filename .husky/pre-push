@@ -16,3 +16,13 @@ if git diff --quiet apps/web/types/api.d.ts && git diff --cached --quiet apps/we
 fi
 
 npm run typecheck:web
+
+# Run basedpyright only when Python files in apps/api have changed against origin.
+# Falls back to running unconditionally if origin/main is missing (first push).
+if git rev-parse --verify origin/main >/dev/null 2>&1; then
+  if git diff --name-only origin/main...HEAD -- 'apps/api/**/*.py' | grep -q .; then
+    (cd apps/api && uv run --quiet basedpyright)
+  fi
+else
+  (cd apps/api && uv run --quiet basedpyright)
+fi

@@ -8,9 +8,14 @@ import type {
 	RecipeFormSubmitData,
 } from "~~/types/forms";
 
-type SignedUploadParams = components["schemas"]["SignedUploadParams"];
 type Tag = components["schemas"]["TagOut"];
 type Category = components["schemas"]["CategoryOut"];
+
+// Cloudinary upload response — third-party host, not part of our OpenAPI.
+interface CloudinaryUploadResponse {
+	secure_url: string;
+	public_id: string;
+}
 
 const props = defineProps<{
 	initial?: Partial<RecipeFormData>;
@@ -20,8 +25,6 @@ const props = defineProps<{
 const emit = defineEmits<{
 	submit: [data: RecipeFormSubmitData];
 }>();
-
-const config = useRuntimeConfig();
 
 // ── Form state ────────────────────────────────────────────────────────────────
 
@@ -149,10 +152,9 @@ function onFileSelect(event: Event) {
 async function _uploadPendingFile(): Promise<void> {
 	const file = pendingFile.value;
 	if (!file) return;
-	const params = await $fetch<SignedUploadParams>(
-		`${config.public.apiUrl}/uploads/sign`,
-		{ method: "POST", credentials: "include" },
-	);
+	const { data: params, error: signError } =
+		await $api.POST("/api/uploads/sign");
+	if (signError || !params) throw signError ?? new Error("sign failed");
 	const fd = new FormData();
 	fd.append("file", file);
 	fd.append("api_key", params.api_key);
@@ -163,7 +165,7 @@ async function _uploadPendingFile(): Promise<void> {
 		`https://api.cloudinary.com/v1_1/${params.cloud_name}/image/upload`,
 		{ method: "POST", body: fd },
 	);
-	const data = await res.json();
+	const data: CloudinaryUploadResponse = await res.json();
 	form.image_url = data.secure_url;
 	form.image_public_id = data.public_id;
 	if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);

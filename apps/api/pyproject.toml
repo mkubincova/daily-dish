@@ -23,6 +23,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "aiosqlite>=0.22.1",
+    "basedpyright>=1.28.0",
     "greenlet>=3.4.0",
     "httpx>=0.28.1",
     "pytest>=9.0.3",
@@ -44,6 +45,28 @@ ignore = ["B008"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
+
+[tool.basedpyright]
+pythonVersion = "3.13"
+typeCheckingMode = "standard"
+include = ["app", "tests", "alembic"]
+exclude = ["**/__pycache__", "test.db", ".venv"]
+# `strict = ["app"]` deferred to a follow-up task — the SQLModel/SQLAlchemy
+# stubs produce ~135 reportUnknown* errors in strict mode that need targeted
+# fixes before the gate can hold. See tasks.md task 1.7.
+reportMissingTypeStubs = "none"
+
+# SQLModel `Field(default_factory=…)` returns a FieldInfo that pyright sees as
+# the field's declared type — universal across our models. Suppress narrowly.
+[[tool.basedpyright.executionEnvironments]]
+root = "app/models"
+reportAssignmentType = "none"
+
+# `alembic.op` augments its module at runtime via op.f / op.create_table etc.;
+# pyright cannot see those attributes. Migration files are auto-generated.
+[[tool.basedpyright.executionEnvironments]]
+root = "alembic/versions"
+reportAttributeAccessIssue = "none"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

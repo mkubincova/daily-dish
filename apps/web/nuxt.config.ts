@@ -39,8 +39,17 @@ export default defineNuxtConfig({
 	},
 	runtimeConfig: {
 		public: {
-			apiUrl: "/api",
 			siteUrl: process.env.NUXT_PUBLIC_SITE_URL || "http://localhost:3000",
+		},
+	},
+	vite: {
+		optimizeDeps: {
+			include: [
+				"@vue/devtools-core",
+				"@vue/devtools-kit",
+				"openapi-fetch",
+				"@phosphor-icons/vue",
+			],
 		},
 	},
 });

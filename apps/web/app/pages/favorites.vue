@@ -1,25 +1,35 @@
 <script setup lang="ts">
-import type { components } from "~~/types/api";
-
-type PaginatedRecipes = components["schemas"]["PaginatedRecipes"];
-
 definePageMeta({ middleware: "auth" });
 
-const config = useRuntimeConfig();
 const route = useRoute();
-const { toApiParams } = useRecipeFilters();
+const { filters } = useRecipeFilters();
 const favoritesStore = useFavoritesStore();
 
 const {
 	data: feed,
 	pending,
 	refresh,
-} = await useFetch<PaginatedRecipes>(
-	`${config.public.apiUrl}/users/me/favorites`,
-	{
-		credentials: "include" as RequestCredentials,
-		query: computed(() => toApiParams()),
+} = await useAsyncData(
+	"favorites:list",
+	async () => {
+		const f = filters.value;
+		const { data, error: apiError } = await $api.GET(
+			"/api/users/me/favorites",
+			{
+				params: {
+					query: {
+						...(f.categoryItems.length > 0 && {
+							category_items: f.categoryItems.map((g) => g.join(",")),
+						}),
+						...(f.tags.length > 0 && { tags: f.tags }),
+					},
+				},
+			},
+		);
+		if (apiError) throw apiError;
+		return data;
 	},
+	{ watch: [filters] },
 );
 
 watch(

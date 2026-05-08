@@ -1,9 +1,6 @@
 import { defineStore } from "pinia";
 
 export const useFavoritesStore = defineStore("favorites", () => {
-	const config = useRuntimeConfig();
-	const apiUrl = config.public.apiUrl;
-
 	const favoritedIds = ref<Set<string>>(new Set());
 
 	function seed(recipes: Array<{ id: string; is_favorited?: boolean | null }>) {
@@ -32,14 +29,12 @@ export const useFavoritesStore = defineStore("favorites", () => {
 
 		try {
 			if (wasFavorited) {
-				await $fetch(`${apiUrl}/recipes/${recipeId}/favorite`, {
-					method: "DELETE",
-					credentials: "include",
+				await $api.DELETE("/api/recipes/{recipe_id}/favorite", {
+					params: { path: { recipe_id: recipeId } },
 				});
 			} else {
-				await $fetch(`${apiUrl}/recipes/${recipeId}/favorite`, {
-					method: "POST",
-					credentials: "include",
+				await $api.POST("/api/recipes/{recipe_id}/favorite", {
+					params: { path: { recipe_id: recipeId } },
 				});
 			}
 		} catch {
