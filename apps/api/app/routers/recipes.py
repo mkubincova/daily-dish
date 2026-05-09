@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy import delete
+from sqlalchemy import ColumnElement, delete
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -216,7 +216,7 @@ async def _load_category_assocs(session: AsyncSession, recipe_id: str) -> list[R
     )
     rows = result.all()
     # Attach category_item onto assoc for later use in _item_category
-    assocs = []
+    assocs: list[RecipeCategoryItem] = []
     for assoc, item in rows:
         assoc.category_item = item
         assocs.append(assoc)
@@ -378,9 +378,9 @@ async def update_recipe(
 
     new_image_public_id = update_data.get("image_public_id")
     if old_image_public_id and new_image_public_id and new_image_public_id != old_image_public_id:
-        from app.routers.uploads import _destroy_cloudinary_image
+        from app.routers.uploads import destroy_cloudinary_image
 
-        await _destroy_cloudinary_image(old_image_public_id)
+        await destroy_cloudinary_image(old_image_public_id)
 
     await session.refresh(recipe)
     owner = await session.get(User, recipe.user_id)
@@ -410,7 +410,7 @@ async def delete_recipe(
     await session.commit()
 
 
-async def _batch_load_associations(
+async def batch_load_associations(
     session: AsyncSession, recipe_ids: list[str]
 ) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
     if not recipe_ids:
@@ -444,14 +444,14 @@ async def _batch_load_favorites(
     return set(result.all())
 
 
-def _filter_clauses(
+def filter_clauses(
     category_item_params: list[str],
     tag_params: list[str],
-) -> list:
+) -> list[ColumnElement[bool]]:
     """Build EXISTS clauses: OR within param value, AND across param occurrences."""
     import sqlalchemy as sa
 
-    clauses = []
+    clauses: list[ColumnElement[bool]] = []
     for raw in category_item_params:
         group = [v.strip() for v in raw.split(",") if v.strip()]
         if group:
@@ -564,9 +564,9 @@ async def permanently_delete_recipe(
     await session.exec(delete(Recipe).where(Recipe.id == recipe_id))  # type: ignore[arg-type]
     await session.commit()
     if image_public_id:
-        from app.routers.uploads import _destroy_cloudinary_image
+        from app.routers.uploads import destroy_cloudinary_image
 
-        await _destroy_cloudinary_image(image_public_id)
+        await destroy_cloudinary_image(image_public_id)
 
 
 @router.get("/mine", response_model=list[RecipeListItem])
@@ -577,23 +577,23 @@ async def list_mine(
     tags: list[str] = Query(default=[]),
     status_filter: str | None = Query(default=None, alias="status"),
 ) -> list[RecipeListItem]:
-    conditions = [
-        Recipe.user_id == current_user.id,
-        Recipe.deleted_at.is_(None),  # type: ignore[union-attr]
+    conditions: list[ColumnElement[bool]] = [
+        col(Recipe.user_id) == current_user.id,
+        col(Recipe.deleted_at).is_(None),
     ]
     if status_filter == "published":
-        conditions.append(Recipe.is_public == True)  # noqa: E712
+        conditions.append(col(Recipe.is_public).is_(True))
     elif status_filter == "draft":
-        conditions.append(Recipe.is_public == False)  # noqa: E712
+        conditions.append(col(Recipe.is_public).is_(False))
 
-    conditions.extend(_filter_clauses(category_items, tags))
+    conditions.extend(filter_clauses(category_items, tags))
 
     stmt = select(Recipe).where(*conditions).order_by(Recipe.created_at.desc())  # type: ignore[union-attr]
     result = await session.exec(stmt)
     recipes = list(result.all())
 
     recipe_ids = [r.id for r in recipes]
-    cat_map, tag_map = await _batch_load_associations(session, recipe_ids)
+    cat_map, tag_map = await batch_load_associations(session, recipe_ids)
     fav_set = await _batch_load_favorites(session, current_user.id, recipe_ids)
 
     owner = OwnerPublic(name=current_user.name, avatar_url=current_user.avatar_url)
@@ -625,10 +625,10 @@ async def list_recipes(
     tags: list[str] = Query(default=[]),
 ) -> PaginatedRecipes:
     # Filter change resets pagination: clients should pass page=1 when filters change.
-    base_conditions = [
-        Recipe.is_public == True,  # noqa: E712
-        Recipe.deleted_at.is_(None),  # type: ignore[union-attr]
-        *_filter_clauses(category_items, tags),
+    base_conditions: list[ColumnElement[bool]] = [
+        col(Recipe.is_public).is_(True),
+        col(Recipe.deleted_at).is_(None),
+        *filter_clauses(category_items, tags),
     ]
     count_result = await session.exec(select(Recipe).where(*base_conditions))
     total = len(count_result.all())
@@ -644,12 +644,12 @@ async def list_recipes(
     recipes = list(result.all())
 
     recipe_ids = [r.id for r in recipes]
-    cat_map, tag_map = await _batch_load_associations(session, recipe_ids)
-    fav_set = (
+    cat_map, tag_map = await batch_load_associations(session, recipe_ids)
+    fav_set: set[str] = (
         await _batch_load_favorites(session, current_user.id, recipe_ids) if current_user else set()
     )
 
-    items = []
+    items: list[RecipeListItem] = []
     for r in recipes:
         owner = await session.get(User, r.user_id)
         items.append(

@@ -136,7 +136,7 @@ async def test_permanent_delete_without_image(auth_client: AsyncClient, session,
     session.add(recipe)
     await session.commit()
 
-    with patch("app.routers.uploads._destroy_cloudinary_image") as mock_destroy:
+    with patch("app.routers.uploads.destroy_cloudinary_image") as mock_destroy:
         resp = await auth_client.delete(f"/api/recipes/{recipe.id}/permanent")
 
     assert resp.status_code == 204
@@ -159,7 +159,7 @@ async def test_permanent_delete_with_image(auth_client: AsyncClient, session, us
     await session.commit()
 
     with patch(
-        "app.routers.uploads._destroy_cloudinary_image", new_callable=AsyncMock
+        "app.routers.uploads.destroy_cloudinary_image", new_callable=AsyncMock
     ) as mock_destroy:
         resp = await auth_client.delete(f"/api/recipes/{recipe.id}/permanent")
 
@@ -179,7 +179,7 @@ async def test_permanent_delete_cloudinary_failure_still_deletes(
     session.add(recipe)
     await session.commit()
 
-    # Patch the underlying SDK call so _destroy_cloudinary_image's error handling runs
+    # Patch the underlying SDK call so destroy_cloudinary_image's error handling runs
     with patch("cloudinary.uploader.destroy", side_effect=Exception("Cloudinary down")):
         resp = await auth_client.delete(f"/api/recipes/{recipe.id}/permanent")
 

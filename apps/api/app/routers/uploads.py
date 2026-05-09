@@ -1,3 +1,5 @@
+# `cloudinary` ships no type stubs; everything off it lands as Unknown.
+# pyright: reportMissingTypeStubs=none, reportUnknownMemberType=none, reportUnknownArgumentType=none
 import hashlib
 import logging
 import time
@@ -25,7 +27,7 @@ def _configure_cloudinary() -> None:
     )
 
 
-async def _destroy_cloudinary_image(public_id: str) -> None:
+async def destroy_cloudinary_image(public_id: str) -> None:
     import asyncio
 
     _configure_cloudinary()

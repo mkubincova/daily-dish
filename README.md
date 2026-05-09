@@ -2,11 +2,6 @@
 
 A personal recipe app and portfolio project. Browse public recipes without signing in; sign in with GitHub or Google to create, edit, and manage your own.
 
-**Live site:** coming soon  
-**API docs:** coming soon
-
----
-
 ## Stack
 
 | Layer     | Technology                                                        |
@@ -56,14 +51,14 @@ npm run dev            # http://localhost:3000
 
 Checks are layered so errors surface as close to the keystroke as possible. Later layers catch anything the earlier ones missed or that was bypassed.
 
-| Layer                     | Trigger                | Runs                                                                                                                                                                                                                                                                                          |
-| ------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude `PostToolUse`      | After each Edit/Write  | `ruff check --fix` + `ruff format` on `.py`; `biome check --write` on web files                                                                                                                                                                                                                |
-| Husky `pre-commit`        | `git commit`           | `lint-staged` → biome on staged web files, ruff on staged Python files (auto re-stage)                                                                                                                                                                                                         |
-| Husky `commit-msg`        | `git commit`           | `commitlint` against `@commitlint/config-conventional` (header rules strict; body/footer wrap relaxed)                                                                                                                                                                                         |
-| Husky `pre-push`          | `git push`             | `apps/web/types/api.d.ts` codegen-drift check; `nuxi typecheck` (with `noUnusedLocals`); `basedpyright` on changed Python files                                                                                                                                                                |
-| GitHub Actions (`ci.yml`) | push / PR to `main`    | **api job:** ruff lint + format, `basedpyright`, pytest (SQLite), `alembic upgrade` + `alembic check` (Postgres). **web job:** biome, `nuxi typecheck`, `vitest run`, `npm run build` (with Cloudinary-secret leak check). **e2e job:** uvicorn + `nuxi preview` + Playwright smoke (`continue-on-error`) |
-| `npm run verify` / `make verify` | On-demand       | The full local backpressure suite — every check above, in one shell-out, with a banner per step                                                                                                                                                                                                |
+| Layer                            | Trigger               | Runs                                                                                                                                                                                                                                                                                                      |
+| -------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude `PostToolUse`             | After each Edit/Write | `ruff check --fix` + `ruff format` on `.py`; `biome check --write` on web files                                                                                                                                                                                                                           |
+| Husky `pre-commit`               | `git commit`          | `lint-staged` → biome on staged web files, ruff on staged Python files (auto re-stage)                                                                                                                                                                                                                    |
+| Husky `commit-msg`               | `git commit`          | `commitlint` against `@commitlint/config-conventional` (header rules strict; body/footer wrap relaxed)                                                                                                                                                                                                    |
+| Husky `pre-push`                 | `git push`            | `apps/web/types/api.d.ts` codegen-drift check; `nuxi typecheck` (with `noUnusedLocals`); `basedpyright` on changed Python files                                                                                                                                                                           |
+| GitHub Actions (`ci.yml`)        | push / PR to `main`   | **api job:** ruff lint + format, `basedpyright`, pytest (SQLite), `alembic upgrade` + `alembic check` (Postgres). **web job:** biome, `nuxi typecheck`, `vitest run`, `npm run build` (with Cloudinary-secret leak check). **e2e job:** uvicorn + `nuxi preview` + Playwright smoke (`continue-on-error`) |
+| `npm run verify` / `make verify` | On-demand             | The full local backpressure suite — every check above, in one shell-out, with a banner per step                                                                                                                                                                                                           |
 
 For UI work, an interactive Playwright MCP server is registered in `.mcp.json` at the repo root, so a Claude Code session can launch a real browser, navigate, and screenshot against the running dev server while iterating — no committed spec required.
 

@@ -51,13 +51,19 @@ pythonVersion = "3.13"
 typeCheckingMode = "standard"
 include = ["app", "tests", "alembic"]
 exclude = ["**/__pycache__", "test.db", ".venv"]
-# `strict = ["app"]` deferred to a follow-up task — the SQLModel/SQLAlchemy
-# stubs produce ~135 reportUnknown* errors in strict mode that need targeted
-# fixes before the gate can hold. See tasks.md task 1.7.
+strict = ["app"]
+
+# Rule overrides at this level apply outside `strict` scope (tests, alembic).
+# Note: `strict = ["app"]` forces every strict rule to "error" inside `app/` and
+# IGNORES the overrides below — for `app/`-specific relaxations we use file-level
+# `# pyright: <rule>=none` comments instead.
 reportMissingTypeStubs = "none"
 
-# SQLModel `Field(default_factory=…)` returns a FieldInfo that pyright sees as
-# the field's declared type — universal across our models. Suppress narrowly.
+# `app/models/`: SQLModel quirks (`__tablename__ = "..."` clashes with the
+# `declared_attr` declared on the SQLModel base; `Field(default_factory=…)`
+# returns a FieldInfo that pyright sees as the field's declared type).
+# Listed here for non-strict callers (e.g. `tests/` importing models); inside
+# `strict` scope each model file pins `reportAssignmentType=none` at the top.
 [[tool.basedpyright.executionEnvironments]]
 root = "app/models"
 reportAssignmentType = "none"

@@ -15,7 +15,7 @@ def _now() -> datetime:
 
 
 class Category(SQLModel, table=True):
-    __tablename__ = "categories"
+    __tablename__ = "categories"  # pyright: ignore[reportAssignmentType]
 
     id: str = Field(primary_key=True)
 
@@ -23,7 +23,7 @@ class Category(SQLModel, table=True):
 
 
 class CategoryItem(SQLModel, table=True):
-    __tablename__ = "category_items"
+    __tablename__ = "category_items"  # pyright: ignore[reportAssignmentType]
 
     id: str = Field(primary_key=True)
     category_id: str = Field(foreign_key="categories.id")
@@ -33,7 +33,7 @@ class CategoryItem(SQLModel, table=True):
 
 
 class Tag(SQLModel, table=True):
-    __tablename__ = "tags"
+    __tablename__ = "tags"  # pyright: ignore[reportAssignmentType]
     __table_args__ = (sa.UniqueConstraint("name", name="tags_name_unique"),)
 
     id: str = Field(default_factory=new_uuid7, primary_key=True)
@@ -48,7 +48,7 @@ class Tag(SQLModel, table=True):
 
 
 class RecipeCategoryItem(SQLModel, table=True):
-    __tablename__ = "recipe_category_items"
+    __tablename__ = "recipe_category_items"  # pyright: ignore[reportAssignmentType]
     __table_args__ = (sa.Index("recipe_category_items_category_item_idx", "category_item_id"),)
 
     recipe_id: str = Field(foreign_key="recipes.id", primary_key=True)
@@ -59,7 +59,7 @@ class RecipeCategoryItem(SQLModel, table=True):
 
 
 class RecipeTag(SQLModel, table=True):
-    __tablename__ = "recipe_tags"
+    __tablename__ = "recipe_tags"  # pyright: ignore[reportAssignmentType]
     __table_args__ = (sa.Index("recipe_tags_tag_idx", "tag_id"),)
 
     recipe_id: str = Field(foreign_key="recipes.id", primary_key=True)

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class Ingredient(SQLModel, table=True):
-    __tablename__ = "ingredients"
+    __tablename__ = "ingredients"  # pyright: ignore[reportAssignmentType]
     __table_args__ = (sa.Index("ingredients_recipe_pos_idx", "recipe_id", "position"),)
 
     id: str = Field(default_factory=new_uuid7, primary_key=True)

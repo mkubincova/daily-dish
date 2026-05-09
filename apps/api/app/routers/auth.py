@@ -1,3 +1,7 @@
+# Authlib's `starlette_client.OAuth` ships without usable type information; every
+# attribute access on a registered client (`create_client`, `authorize_redirect`,
+# `authorize_access_token`, `get`, `userinfo`, …) is `Unknown` to pyright.
+# pyright: reportUnknownMemberType=none, reportUnknownVariableType=none, reportUnknownArgumentType=none, reportUnknownParameterType=none, reportMissingTypeArgument=none
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -139,7 +143,7 @@ async def get_me(
 
 
 @router.post("/logout")
-async def logout(response: Response) -> dict:
+async def logout(response: Response) -> dict[str, str]:
     clear_session_cookie(response)
     return {"message": "Logged out"}
 

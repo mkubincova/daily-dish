@@ -52,5 +52,5 @@ app.include_router(api_router)
 
 # Health check kept at root so Railway's health probe does not require the /api prefix.
 @app.get("/health", tags=["health"])
-async def health() -> dict:
+async def health() -> dict[str, str]:
     return {"status": "ok"}

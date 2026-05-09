@@ -15,7 +15,7 @@ def _now() -> datetime:
 
 
 class User(SQLModel, table=True):
-    __tablename__ = "users"
+    __tablename__ = "users"  # pyright: ignore[reportAssignmentType]
     __table_args__ = (
         sa.Index("users_email_idx", "email"),
         sa.UniqueConstraint("provider", "provider_id", name="users_provider_id_unique"),

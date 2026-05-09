@@ -134,17 +134,3 @@ The root `README.md` MUST contain a "Quality checks" table that lists every back
 - **WHEN** a reader opens the root `README.md`
 - **THEN** the table or its accompanying paragraph mentions the `.mcp.json`-registered Playwright MCP server as the way an interactive coding agent drives the UI
 
-### Requirement: Production runtime errors SHALL be reported via Sentry when configured
-
-Both the FastAPI backend and the Nuxt frontend MUST initialise Sentry when (and only when) a `SENTRY_DSN` environment variable is present. When unset, neither SDK is initialised and local development behaviour is unchanged. Initialisation MUST NOT enable performance tracing, session replay, or PII capture in this iteration; basic error capture only.
-
-#### Scenario: Backend exception reaches Sentry in production
-
-- **WHEN** `SENTRY_DSN` is set in the deployed API environment
-- **AND** an unhandled exception is raised by a route handler
-- **THEN** the error is captured by `sentry-sdk` and visible in the Sentry project
-
-#### Scenario: Local dev without DSN is unaffected
-
-- **WHEN** `SENTRY_DSN` is unset locally
-- **THEN** the API and web app start and behave identically to current behaviour, with no network calls to Sentry

@@ -11,7 +11,7 @@ def _now() -> datetime:
 
 
 class UserFavorite(SQLModel, table=True):
-    __tablename__ = "user_favorites"
+    __tablename__ = "user_favorites"  # pyright: ignore[reportAssignmentType]
     __table_args__ = (
         sa.UniqueConstraint("user_id", "recipe_id", name="user_favorites_unique"),
         sa.Index("user_favorites_user_idx", "user_id"),

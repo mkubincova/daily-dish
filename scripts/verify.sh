@@ -65,10 +65,21 @@ step "Web · nuxi typecheck"
 step "Web · openapi codegen drift"
 api_url="${NUXT_API_PROXY_TARGET:-http://localhost:8000}"
 if curl -sf --max-time 2 "$api_url/openapi.json" -o /dev/null; then
+	# Snapshot the on-disk types BEFORE regenerating, then compare. This asks
+	# "is codegen output stable?" rather than "is the file committed?" — so a
+	# developer who has correctly run codegen but not yet committed isn't
+	# punished. Real drift (API shape changed without running codegen) still
+	# trips the check.
+	typed_path="apps/web/types/api.d.ts"
+	snapshot="$(mktemp)"
+	cp "$typed_path" "$snapshot"
 	(cd apps/web && npm run codegen >/dev/null)
-	if ! git diff --quiet apps/web/types/api.d.ts; then
+	drift=0
+	diff -q "$snapshot" "$typed_path" >/dev/null || drift=1
+	rm -f "$snapshot"
+	if (( drift )); then
 		printf '%s✘ apps/web/types/api.d.ts drifted after codegen.%s\n' "$RED" "$RESET"
-		printf '   commit the regenerated file, or run: npm --prefix apps/web run codegen\n'
+		printf '   the regenerated file differs from what was on disk — re-run: npm --prefix apps/web run codegen\n'
 		exit 1
 	fi
 	ok "no drift"

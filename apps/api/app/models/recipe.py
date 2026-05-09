@@ -18,7 +18,7 @@ def _now() -> datetime:
 
 
 class Recipe(SQLModel, table=True):
-    __tablename__ = "recipes"
+    __tablename__ = "recipes"  # pyright: ignore[reportAssignmentType]
     __table_args__ = (
         sa.UniqueConstraint("slug", name="recipes_slug_unique"),
         sa.Index("recipes_slug_idx", "slug"),

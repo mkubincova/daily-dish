@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import ColumnElement
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -14,8 +15,8 @@ from app.routers.recipes import (
     OwnerPublic,
     PaginatedRecipes,
     RecipeListItem,
-    _batch_load_associations,
-    _filter_clauses,
+    batch_load_associations,
+    filter_clauses,
 )
 
 router = APIRouter(tags=["favorites"])
@@ -30,10 +31,10 @@ async def list_favorites(
     category_items: list[str] = Query(default=[]),
     tags: list[str] = Query(default=[]),
 ) -> PaginatedRecipes:
-    base_conditions = [
-        UserFavorite.user_id == current_user.id,
-        Recipe.deleted_at.is_(None),  # type: ignore[union-attr]
-        *_filter_clauses(category_items, tags),
+    base_conditions: list[ColumnElement[bool]] = [
+        col(UserFavorite.user_id) == current_user.id,
+        col(Recipe.deleted_at).is_(None),
+        *filter_clauses(category_items, tags),
     ]
 
     count_stmt = (
@@ -56,9 +57,9 @@ async def list_favorites(
     recipes = list(result.all())
 
     recipe_ids = [r.id for r in recipes]
-    cat_map, tag_map = await _batch_load_associations(session, recipe_ids)
+    cat_map, tag_map = await batch_load_associations(session, recipe_ids)
 
-    items = []
+    items: list[RecipeListItem] = []
     for r in recipes:
         owner = await session.get(User, r.user_id)
         items.append(
