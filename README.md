@@ -56,14 +56,18 @@ npm run dev            # http://localhost:3000
 
 Checks are layered so errors surface as close to the keystroke as possible. Later layers catch anything the earlier ones missed or that was bypassed.
 
-| Layer                    | Trigger                    | Runs                                                                                   |
-| ------------------------ | -------------------------- | -------------------------------------------------------------------------------------- |
-| Claude `PostToolUse`     | After each Edit/Write      | `ruff check --fix` + `ruff format` on `.py`; `biome check --write` on web files        |
-| Husky `pre-commit`       | `git commit`               | `lint-staged` → biome on staged web files, ruff on staged Python files (auto re-stage) |
-| Husky `pre-push`         | `git push`                 | `vue-tsc` typecheck on the frontend                                                    |
-| GitHub Actions (`ci.yml`) | push / PR to `main`        | ruff lint+format, pytest, `alembic upgrade` + `alembic check` (Postgres), biome, typecheck |
+| Layer                     | Trigger                | Runs                                                                                                                                                                                                                                                                                          |
+| ------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude `PostToolUse`      | After each Edit/Write  | `ruff check --fix` + `ruff format` on `.py`; `biome check --write` on web files                                                                                                                                                                                                                |
+| Husky `pre-commit`        | `git commit`           | `lint-staged` → biome on staged web files, ruff on staged Python files (auto re-stage)                                                                                                                                                                                                         |
+| Husky `commit-msg`        | `git commit`           | `commitlint` against `@commitlint/config-conventional` (header rules strict; body/footer wrap relaxed)                                                                                                                                                                                         |
+| Husky `pre-push`          | `git push`             | `apps/web/types/api.d.ts` codegen-drift check; `nuxi typecheck` (with `noUnusedLocals`); `basedpyright` on changed Python files                                                                                                                                                                |
+| GitHub Actions (`ci.yml`) | push / PR to `main`    | **api job:** ruff lint + format, `basedpyright`, pytest (SQLite), `alembic upgrade` + `alembic check` (Postgres). **web job:** biome, `nuxi typecheck`, `vitest run`, `npm run build` (with Cloudinary-secret leak check). **e2e job:** uvicorn + `nuxi preview` + Playwright smoke (`continue-on-error`) |
+| `npm run verify` / `make verify` | On-demand       | The full local backpressure suite — every check above, in one shell-out, with a banner per step                                                                                                                                                                                                |
 
-Hook activation requires `npm install` at the repo root (Husky's `prepare` script registers `.husky/` as git's hooks path). The Claude `PostToolUse` hook lives in `.claude/hooks/post_edit.sh` and is only active in Claude Code sessions. CI is the enforceable floor — local hooks are skippable (`--no-verify`) and exist to shorten the feedback loop, not to replace the pipeline.
+For UI work, an interactive Playwright MCP server is registered in `.mcp.json` at the repo root, so a Claude Code session can launch a real browser, navigate, and screenshot against the running dev server while iterating — no committed spec required.
+
+Hook activation requires `npm install` at the repo root (Husky's `prepare` script registers `.husky/` as git's hooks path). The Claude `PostToolUse` hook lives in `.claude/hooks/post_edit.sh` and is only active in Claude Code sessions. CI is the enforceable floor — local hooks are skippable (`--no-verify`) and exist to shorten the feedback loop, not to replace the pipeline. `npm run verify` is the cheapest way to reproduce that floor locally before pushing.
 
 ## Design decisions
 
