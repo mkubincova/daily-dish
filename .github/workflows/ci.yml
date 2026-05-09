@@ -91,6 +91,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Tests (Vitest)
+        run: npm run test
+
       - name: Verify no Cloudinary secret in build output
         run: |
           npm run build 2>&1 | grep -i "CLOUDINARY_API_SECRET" && exit 1 || true

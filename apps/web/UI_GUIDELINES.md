@@ -138,3 +138,9 @@ Add new transitions here if needed; don't define them inline in components.
 - Don't recreate `.dish-input` / `.dish-btn-*` inline — use the component classes.
 - Don't add Google Fonts links directly in a component — they are loaded globally in `nuxt.config.ts`.
 - Don't use `style=""` for anything that can be expressed with Tailwind utilities or `dish-*` tokens.
+
+---
+
+## Unused locals and imports
+
+Biome's `noUnusedVariables` / `noUnusedImports` rules are intentionally **disabled for `*.vue`** files (`biome.json`) — they don't fully understand `<script setup>` macros and produce false positives. Detection lives in `vue-tsc` instead: `nuxt.config.ts` enables `compilerOptions.noUnusedLocals` and `compilerOptions.noUnusedParameters`, so `npm run typecheck` (and CI) fails on dead bindings in both `.vue` and `.ts` files. When a binding is intentionally unused (e.g. a destructured value you only need for ordering), prefix it with an underscore — TS treats `_foo` as deliberately discarded.

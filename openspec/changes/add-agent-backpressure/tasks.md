@@ -30,14 +30,14 @@
 
 ## 3. Web tests in CI
 
-- [ ] 3.1 Add a `Tests (Vitest)` step to the `web` job in `.github/workflows/ci.yml` after the typecheck step: `run: npm run test`.
-- [ ] 3.2 Verify the new step runs in CI for this PR.
+- [x] 3.1 Add a `Tests (Vitest)` step to the `web` job in `.github/workflows/ci.yml` after the typecheck step: `run: npm run test`.
+- [ ] 3.2 Verify the new step runs in CI for this PR. (Requires a push; locally `npm --prefix apps/web run test` passes 7/7. To be confirmed on first CI run.)
 
 ## 4. Vue unused-binding detection via vue-tsc
 
-- [ ] 4.1 In `apps/web/nuxt.config.ts`, add a `typescript.tsConfig` override setting `compilerOptions.noUnusedLocals = true` and `compilerOptions.noUnusedImports = true`.
-- [ ] 4.2 Run `npm --prefix apps/web run typecheck`. Address legitimate unused declarations; rename intentionally-unused destructures with a leading underscore.
-- [ ] 4.3 Confirm Biome's existing Vue overrides remain in `apps/web/biome.json` (no Biome change required); document in `apps/web/UI_GUIDELINES.md` (one short paragraph) that unused-locals are caught by `vue-tsc`, not Biome, and the underscore convention is the escape hatch.
+- [x] 4.1 In `apps/web/nuxt.config.ts`, add a `typescript.tsConfig` override setting `compilerOptions.noUnusedLocals = true` and `compilerOptions.noUnusedImports = true`. (TypeScript has no `noUnusedImports` option — `noUnusedLocals` already covers unused imports. Used `noUnusedLocals: true` plus `noUnusedParameters: true` for full coverage. Confirmed flags propagate to `.nuxt/tsconfig.app.json` and `.nuxt/tsconfig.json`.)
+- [x] 4.2 Run `npm --prefix apps/web run typecheck`. Address legitimate unused declarations; rename intentionally-unused destructures with a leading underscore. (No fixes needed — codebase was already clean. Verified vue-tsc actually catches new violations by dropping a canary `app/_canary.vue` with an unused `Ref` import: TS6133 fires, exit 1, then reverted.)
+- [x] 4.3 Confirm Biome's existing Vue overrides remain in `apps/web/biome.json` (no Biome change required); document in `apps/web/UI_GUIDELINES.md` (one short paragraph) that unused-locals are caught by `vue-tsc`, not Biome, and the underscore convention is the escape hatch. (Biome overrides untouched; added "Unused locals and imports" paragraph at end of `UI_GUIDELINES.md`.)
 
 ## 5. Playwright + MCP
 

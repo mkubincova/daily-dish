@@ -42,6 +42,14 @@ export default defineNuxtConfig({
 			siteUrl: process.env.NUXT_PUBLIC_SITE_URL || "http://localhost:3000",
 		},
 	},
+	typescript: {
+		tsConfig: {
+			compilerOptions: {
+				noUnusedLocals: true,
+				noUnusedParameters: true,
+			},
+		},
+	},
 	vite: {
 		optimizeDeps: {
 			include: [
