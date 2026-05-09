@@ -36,11 +36,17 @@ When making any UI change in `apps/web/`, read **[`apps/web/UI_GUIDELINES.md`](a
 
 ## Conventions
 
-- **Conventional Commits** (`feat:`, `fix:`, `chore:`, etc.).
+- **Conventional Commits** (`feat:`, `fix:`, `chore:`, etc.) — enforced locally via the husky `commit-msg` hook (`commitlint`).
 - Prefer the simplest thing that satisfies the spec; defer cleverness.
 - Backend: Ruff-clean, async throughout, type-hinted.
 - Frontend: typed API client from generated OpenAPI types — don't hand-write request/response shapes.
 - **Port cleanup:** after starting the backend locally for any reason (OpenAPI codegen, manual testing), always kill the process when done — `lsof -ti :8000 | xargs kill -9`. The user runs the dev servers from their own terminal.
+
+## Verify before declaring done
+
+Run `npm run verify` (or `make verify`) at the repo root before claiming work is complete. The script runs the full backpressure suite — ruff, basedpyright, pytest, alembic check, biome, nuxi typecheck, codegen drift, vitest, playwright smoke — and prints a banner per step. **Treat a non-zero exit as "not done"**: identify the failing step, fix the underlying cause, and re-run until it exits clean. Don't ship around a red verify.
+
+For UI work, an interactive Playwright MCP server is registered in `.mcp.json` at the repo root — Claude Code can drive a real browser (navigate, click, screenshot) against the running dev server while iterating.
 
 ## Predecessor app
 

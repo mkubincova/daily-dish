@@ -1,7 +1,9 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env")
+
     database_url: str
     secret_key: str
     frontend_url: str = "http://localhost:3000"
@@ -15,9 +17,6 @@ class Settings(BaseSettings):
     cloudinary_cloud_name: str = ""
     cloudinary_api_key: str = ""
     cloudinary_api_secret: str = ""
-
-    class Config:
-        env_file = ".env"
 
 
 # pydantic-settings populates fields from env at runtime; pyright doesn't see this.
