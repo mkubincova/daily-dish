@@ -29,11 +29,8 @@ ok()   { printf '%s  ✓ %s%s\n' "$GREEN" "$1" "$RESET"; }
 trap 'printf "\n%s✘ verify failed%s\n" "$RED" "$RESET"' ERR
 
 # --- API -------------------------------------------------------------------
-step "API · ruff check"
-(cd apps/api && uv run ruff check app/ tests/)
-
-step "API · ruff format --check"
-(cd apps/api && uv run ruff format --check app/ tests/)
+step "API · ruff (lint + format)"
+(cd apps/api && uv run ruff check app/ tests/ && uv run ruff format --check app/ tests/)
 
 step "API · basedpyright"
 (cd apps/api && uv run basedpyright)

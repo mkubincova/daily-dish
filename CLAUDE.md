@@ -2,6 +2,8 @@
 
 Personal recipe app + portfolio project. Single developer, single primary user (the author). Used on laptop for planning and on phone in the kitchen for cooking.
 
+> **MANDATORY — read before responding.** Before declaring **any** feature, fix, or refactor "done", "ready", "complete", or equivalent: run `npm run verify` at the repo root and let it exit clean. Non-zero exit = not done — find the failing step, fix the underlying cause, re-run. **Do not** answer "this is ready" until verify is green. See [Verify before declaring done](#verify-before-declaring-done) for the full rule.
+
 ## Tech stack
 
 - **Frontend:** Nuxt 3 (Vue 3, SSR), Pinia, Tailwind. Vitest + Playwright. Deployed on Vercel.
@@ -44,10 +46,6 @@ When making any UI change in `apps/web/`, read **[`apps/web/UI_GUIDELINES.md`](a
 
 ## Verify before declaring done
 
-Run `npm run verify` (or `make verify`) at the repo root before claiming work is complete. The script runs the full backpressure suite — ruff, basedpyright, pytest, alembic check, biome, nuxi typecheck, codegen drift, vitest, playwright smoke — and prints a banner per step. **Treat a non-zero exit as "not done"**: identify the failing step, fix the underlying cause, and re-run until it exits clean. Don't ship around a red verify.
+**This is non-negotiable.** Run `npm run verify` (or `make verify`) at the repo root before claiming work is complete — every time, every feature, no exceptions. The script runs the full backpressure suite — ruff, basedpyright, pytest, alembic check, biome, nuxi typecheck, codegen drift, vitest, playwright smoke — and prints a banner per step. **Treat a non-zero exit as "not done"**: identify the failing step, fix the underlying cause, and re-run until it exits clean. Don't ship around a red verify, and don't say "this is done except for X" — fix X first. If verify hasn't run, the feature isn't done yet.
 
 For UI work, an interactive Playwright MCP server is registered in `.mcp.json` at the repo root — Claude Code can drive a real browser (navigate, click, screenshot) against the running dev server while iterating.
-
-## Predecessor app
-
-There is an older Strapi-based recipe app still live. It is **not** being migrated in place — a handful of recipes will be scraped as seed data once the new schema lands. Schema decisions are not constrained by the old shape.

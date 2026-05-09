@@ -167,6 +167,17 @@ jobs:
         working-directory: apps/web
         run: npm ci
 
+      - name: Verify openapi codegen has no drift
+        working-directory: apps/web
+        run: |
+          npm run codegen
+          if ! git diff --quiet types/api.d.ts; then
+            echo "✘ apps/web/types/api.d.ts drifted after codegen."
+            echo "  Re-run: npm --prefix apps/web run codegen and commit the result."
+            git --no-pager diff types/api.d.ts | head -100
+            exit 1
+          fi
+
       - name: Build web
         working-directory: apps/web
         run: npm run build

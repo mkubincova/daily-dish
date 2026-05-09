@@ -4,7 +4,6 @@
   "description": "Monorepo root — hosts git hooks (husky + lint-staged). App packages live under apps/.",
   "scripts": {
     "prepare": "husky",
-    "typecheck:web": "npm --prefix apps/web run typecheck",
     "verify": "bash scripts/verify.sh"
   },
   "devDependencies": {
