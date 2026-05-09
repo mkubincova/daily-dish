@@ -11,14 +11,13 @@ Daily Dish has the *parts* of a good agent-feedback loop (Ruff, Biome, vue-tsc, 
 - Add a `commit-msg` husky hook running `commitlint` against `@commitlint/config-conventional`, enforcing the Conventional Commits convention CLAUDE.md already mandates.
 - Add a single "verify" entry point at the repo root (`npm run verify` and a `make verify` mirror) that runs the full backpressure suite — backend lint, format, type-check, tests, alembic check; frontend lint, type-check, codegen-drift, tests — and reference it from CLAUDE.md as the command an agent must run before declaring work done.
 - Replace Biome's currently-disabled Vue unused-var/import rules with a `vue-tsc --noUnusedLocals` pass folded into the existing typecheck step (no second linter; cheapest option).
-- Add Sentry SDKs to both FastAPI and Nuxt with minimal init (DSN via env, no PII), purely to provide a "runtime feedback" signal for production and to round out the backpressure story for the portfolio narrative. Off when DSN is absent, so local dev is unaffected.
 - Update the root `README.md` "Quality checks" table so a reader can tell at a glance which backpressure mechanism runs at which trigger (Claude PostToolUse → pre-commit → commit-msg → pre-push → CI → on-demand `verify`), and what each one catches. Mention the Playwright MCP entry point.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `agent-backpressure`: the suite of automated feedback mechanisms (typed API client wiring, Python type-checking, web test execution, Playwright + MCP, commit-msg enforcement, unified verify entry point, runtime error reporting) that ensure code-quality regressions surface as a failing local command or CI step rather than a silent green build.
+- `agent-backpressure`: the suite of automated feedback mechanisms (typed API client wiring, Python type-checking, web test execution, Playwright + MCP, commit-msg enforcement, unified verify entry point) that ensure code-quality regressions surface as a failing local command or CI step rather than a silent green build.
 
 ### Modified Capabilities
 
@@ -27,12 +26,12 @@ _(none — no spec-level behavior of existing capabilities changes; this is dev-
 ## Impact
 
 - **`apps/web/`**:
-  - New dependency: `openapi-fetch`. New dev dependencies: `@playwright/test`, `@commitlint/cli`, `@commitlint/config-conventional`, `@sentry/nuxt`.
+  - New dependency: `openapi-fetch`. New dev dependencies: `@playwright/test`, `@commitlint/cli`, `@commitlint/config-conventional`.
   - Migrated call sites: every file currently calling `$fetch<X>(...)` or `useFetch<X>(...)` in `composables/`, `stores/`, `pages/`, `components/`. Hand-written response/request types deleted.
-  - New: `playwright.config.ts`, `e2e/` directory with smoke spec, `.mcp.json` at repo root, Sentry plugin under `app/plugins/`.
+  - New: `playwright.config.ts`, `e2e/` directory with smoke spec, `.mcp.json` at repo root.
 - **`apps/api/`**:
-  - New dev dependency: `basedpyright`. Runtime dependency: `sentry-sdk[fastapi]`.
-  - New `[tool.basedpyright]` block in `pyproject.toml`. Sentry init in `app/main.py`, gated on `SENTRY_DSN` env var.
+  - New dev dependency: `basedpyright`.
+  - New `[tool.basedpyright]` block in `pyproject.toml`.
 - **Repo root**:
   - New: `.commitlintrc.cjs`, root `package.json` gains a `verify` script and `commitlint` devDeps, new `.husky/commit-msg` hook, `Makefile` (or `scripts/verify.sh`) at root.
   - `.lintstagedrc.mjs` unchanged (still runs Biome/Ruff on staged files only).
@@ -44,5 +43,4 @@ _(none — no spec-level behavior of existing capabilities changes; this is dev-
   - Note about `.mcp.json` and Playwright MCP for UI verification.
 - **`README.md`**:
   - "Quality checks" table updated with the new layers (basedpyright, vitest in CI, Playwright + MCP, commit-msg, on-demand `verify`).
-- **Env vars**: optional `SENTRY_DSN` (FE + BE), `SENTRY_ENVIRONMENT`. `.env.example` updated; `DEPLOYMENT.md` updated.
 - **No API contract changes. No DB migrations.** The migration to `openapi-fetch` is a pure refactor against types already generated from the unchanged OpenAPI document.

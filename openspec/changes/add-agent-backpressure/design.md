@@ -9,7 +9,6 @@ The repo's existing tooling is described in CLAUDE.md and `.github/workflows/ci.
 - `commit-msg` is not in `.husky/`. Conventional Commits is mandated by CLAUDE.md but unenforced.
 - Verify steps are scattered across `apps/api/Makefile`, `apps/web/package.json` scripts, and CI. There is no single command an agent can run before declaring work done.
 - Biome's `apps/web/biome.json` disables `noUnusedVariables` and `noUnusedImports` for `*.vue` due to a known SFC limitation; nothing currently catches unused script-setup bindings.
-- No production runtime feedback signal (`Sentry` not present in either tree).
 
 This is a portfolio project, single developer, single user. Constraints favour cheap, well-known tools that integrate with existing husky + uv + biome + ruff + vitest + alembic infrastructure rather than introducing parallel pipelines.
 
@@ -33,7 +32,7 @@ This is a portfolio project, single developer, single user. Constraints favour c
 - Test-coverage thresholds, mutation testing, Storybook/visual regression. Out of scope.
 - Backend type-checker strictness on third-party stubs. We accept SQLModel/SQLAlchemy quirks via targeted ignores.
 - Unifying the frontend HTTP layer beyond what `openapi-fetch` requires (no big composable rewrite, no Pinia restructuring).
-- Sentry features beyond minimal init (no performance tracing, no session replay, no source-map upload — can come later).
+- Runtime error reporting (Sentry / equivalent). Considered and dropped — see "Decisions: Sentry dropped" below. Production errors are visible only via Railway/Vercel logs for now.
 - Pre-push running tests. Tests run only in CI and on-demand via `verify` to keep pre-push fast.
 
 ## Decisions
@@ -91,12 +90,9 @@ Add `"noUnusedLocals": true` and `"noUnusedImports": true` to the Nuxt-generated
 - **Alternative — add `eslint-plugin-vue` for `*.vue` only:** introduces a second linter, second config, second CI step. Rejected as redundant given `vue-tsc` already parses SFCs.
 - **Alternative — turn the Biome rules back on:** the underlying Biome limitation hasn't changed; would produce false positives.
 
-### 6. Sentry: optional, env-gated, minimal
+### 6. Sentry: dropped
 
-Sentry SDKs (`sentry-sdk[fastapi]`, `@sentry/nuxt`) installed and initialised only when `SENTRY_DSN` is set. No performance tracing, no replay, no source-map upload in this change. Init lives in `apps/api/app/main.py` and `apps/web/app/plugins/sentry.client.ts` (client-only — SSR error wiring deferred). Local dev is unaffected because no DSN is present.
-
-- **Alternative — skip Sentry, add structured logging only:** the slides explicitly call out "runtime feedback" as a backpressure pillar; Sentry is the cheapest way to honour that and the portfolio narrative benefits.
-- **Alternative — full Sentry rollout (tracing, replay, releases, source maps):** more value but more configuration; defer to a follow-up.
+Originally proposed as the "runtime feedback" pillar of the backpressure stack. Dropped during implementation: this is a single-developer personal project where we don't want to maintain a Sentry account or the associated setup overhead. Production errors will continue to surface only through Railway and Vercel platform logs. Re-introduce as a follow-up change if/when the cost of log-tailing exceeds the cost of standing up Sentry.
 
 ### 7. Commit-msg enforcement: `commitlint` + `@commitlint/config-conventional`
 
@@ -110,6 +106,5 @@ Standard combo, integrates with husky in two lines (`npx --no -- commitlint --ed
 - **`basedpyright` will surface a backlog of latent type errors on first run** → the initial PR may need targeted `# pyright: ignore[...]` lines or per-file-ignore configuration. *Mitigation:* land the tool in a permissive (`standard`) mode first across the whole tree, then tighten `app/` to `strict` once the noisy warnings are addressed; both happen inside this change but as separate tasks so we can ship if `strict` proves too noisy.
 - **Playwright in CI doubles the web-job runtime** (browser download + install). *Mitigation:* cache `~/.cache/ms-playwright`; only run a single `chromium` smoke spec; no cross-browser matrix.
 - **Mock OAuth for the Playwright smoke spec** could leak into prod if the bypass isn't tightly env-gated. *Mitigation:* the bypass is `ENV != "production"` AND requires a specific test-only header / query param; covered by an explicit test in `apps/api/tests/test_auth.py`.
-- **Sentry in dev with a stray DSN** could exfiltrate dev errors. *Mitigation:* only initialise when `SENTRY_DSN` is set AND `SENTRY_ENVIRONMENT` is provided; document this in `.env.example` and `DEPLOYMENT.md`.
 - **`verify` becomes slow as the repo grows** and an agent stops running it. *Mitigation:* the script prints per-step durations; if any single step crosses ~30s we revisit (e.g., parallelise with `concurrently` or move Playwright behind a `--full` flag). Out of scope to optimise pre-emptively.
 - **`vue-tsc --noUnusedLocals` will flag legitimate intentional unused destructures** (e.g., `const { someProp: _ } = props`). *Mitigation:* the `_` prefix convention disables the warning; codify in CLAUDE.md UI guidelines if it comes up more than twice.

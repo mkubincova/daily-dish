@@ -61,12 +61,9 @@
 - [x] 6.3 Create `.husky/commit-msg` with `npx --no -- commitlint --edit "$1"`. Mark executable.
 - [x] 6.4 Verify: `git commit -m "broken message"` is rejected; `git commit -m "chore: add commitlint"` succeeds. (Verified by piping each message to `npx --no -- commitlint`: bad → exit 1 with `subject-empty` + `type-empty`; good → exit 0. Skipped the `git commit` invocation to avoid touching the unrelated staged change in `tasks.md`.)
 
-## 7. Sentry runtime feedback
+## 7. ~~Sentry runtime feedback~~ — dropped
 
-- [ ] 7.1 Backend: add `sentry-sdk[fastapi]` to `apps/api/pyproject.toml`. Initialise in `app/main.py` only when `settings.sentry_dsn` is set; pass `environment=settings.sentry_environment`, `traces_sample_rate=0`, `send_default_pii=False`. Add the two settings to `app/config.py` with sane defaults.
-- [ ] 7.2 Frontend: add `@sentry/nuxt` to `apps/web/package.json`. Add `apps/web/app/plugins/sentry.client.ts` that calls `Sentry.init` only when `runtimeConfig.public.sentryDsn` is set. Pipe `NUXT_PUBLIC_SENTRY_DSN` into `nuxt.config.ts` `runtimeConfig.public`.
-- [ ] 7.3 Update `.env.example` files (api + web) and `DEPLOYMENT.md` with the new `SENTRY_DSN` / `SENTRY_ENVIRONMENT` / `NUXT_PUBLIC_SENTRY_DSN` variables, marked optional.
-- [ ] 7.4 Verify: with DSN unset, `npm --prefix apps/web run dev` and `cd apps/api && uv run uvicorn app.main:app` both behave identically to current behaviour. Kill the api on port 8000 when done (`lsof -ti :8000 | xargs kill -9`).
+Dropped: not adding a Sentry account for this personal project. The backpressure stack stops at "errors will be visible in Railway/Vercel logs"; if a runtime-error reporter is wanted later, re-add as a follow-up change.
 
 ## 8. Single `verify` entry point
 
