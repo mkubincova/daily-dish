@@ -7,6 +7,8 @@
     "typecheck:web": "npm --prefix apps/web run typecheck"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2"
   }

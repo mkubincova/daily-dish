@@ -56,10 +56,10 @@
 
 ## 6. Commit-msg enforcement
 
-- [ ] 6.1 Add `@commitlint/cli` and `@commitlint/config-conventional` to root `package.json` `devDependencies`. Run `npm install`.
-- [ ] 6.2 Add `.commitlintrc.cjs` at the repo root: `module.exports = { extends: ["@commitlint/config-conventional"] };`.
-- [ ] 6.3 Create `.husky/commit-msg` with `npx --no -- commitlint --edit "$1"`. Mark executable.
-- [ ] 6.4 Verify: `git commit -m "broken message"` is rejected; `git commit -m "chore: add commitlint"` succeeds.
+- [x] 6.1 Add `@commitlint/cli` and `@commitlint/config-conventional` to root `package.json` `devDependencies`. Run `npm install`. (Resolved to `@commitlint/cli@19.6.1` + `@commitlint/config-conventional@19.6.0`; +105 packages.)
+- [x] 6.2 Add `.commitlintrc.cjs` at the repo root: `module.exports = { extends: ["@commitlint/config-conventional"] };`. (Also disabled `body-max-line-length` and `footer-max-line-length` so the `/commit` skill's prose-bullet bodies aren't rejected by the hook. Header rules — type/scope/subject/length — stay strict, since that's the part that matters for parsers and changelogs. Verified by replaying the last three session commits through `commitlint`: all pass.)
+- [x] 6.3 Create `.husky/commit-msg` with `npx --no -- commitlint --edit "$1"`. Mark executable.
+- [x] 6.4 Verify: `git commit -m "broken message"` is rejected; `git commit -m "chore: add commitlint"` succeeds. (Verified by piping each message to `npx --no -- commitlint`: bad → exit 1 with `subject-empty` + `type-empty`; good → exit 0. Skipped the `git commit` invocation to avoid touching the unrelated staged change in `tasks.md`.)
 
 ## 7. Sentry runtime feedback
 
