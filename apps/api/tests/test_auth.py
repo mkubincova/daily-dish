@@ -155,3 +155,42 @@ async def test_same_email_different_provider_creates_separate_accounts(session):
     result = await session.exec(select(User).where(User.email == "shared@example.com"))
     users = result.all()
     assert len(users) == 2
+
+
+@pytest.mark.asyncio
+async def test_test_login_creates_user_and_sets_cookie(client: AsyncClient):
+    resp = await client.post(
+        "/api/auth/_test/login",
+        json={"email": "e2e@example.com", "name": "E2E User"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["email"] == "e2e@example.com"
+    assert data["provider"] == "test"
+    assert SESSION_COOKIE in resp.cookies
+
+    # Cookie is real — /auth/me should accept it.
+    me = await client.get("/api/auth/me")
+    assert me.status_code == 200
+    assert me.json()["email"] == "e2e@example.com"
+
+
+@pytest.mark.asyncio
+async def test_test_login_is_idempotent(client: AsyncClient):
+    first = await client.post("/api/auth/_test/login", json={"email": "same@example.com"})
+    second = await client.post("/api/auth/_test/login", json={"email": "same@example.com"})
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["id"] == second.json()["id"]
+
+
+@pytest.mark.asyncio
+async def test_test_login_disabled_in_production(
+    monkeypatch: pytest.MonkeyPatch, client: AsyncClient
+):
+    from app.routers import auth as auth_module
+
+    monkeypatch.setattr(auth_module.settings, "environment", "production")
+
+    resp = await client.post("/api/auth/_test/login", json={"email": "blocked@example.com"})
+    assert resp.status_code == 404

@@ -99,3 +99,113 @@ jobs:
           npm run build 2>&1 | grep -i "CLOUDINARY_API_SECRET" && exit 1 || true
         env:
           NUXT_PUBLIC_API_URL: http://localhost:8000
+
+  e2e:
+    name: E2E — Playwright smoke
+    runs-on: ubuntu-latest
+    # Non-blocking while the suite stabilises. Flip once we trust it.
+    continue-on-error: true
+    env:
+      # SQLite test DB matches the API pytest setup. Migrations aren't run here —
+      # SQLModel.metadata.create_all generates the schema like conftest does.
+      # If E2E ever needs Postgres-specific behavior (partial indexes, JSONB
+      # queries), promote this job to use the postgres service the api job uses.
+      DATABASE_URL: sqlite+aiosqlite:///./e2e.db
+      SECRET_KEY: ci-e2e-secret-key
+      ENVIRONMENT: development
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install API dependencies
+        working-directory: apps/api
+        run: uv sync --all-groups
+
+      - name: Initialise SQLite test DB
+        working-directory: apps/api
+        run: |
+          uv run python -c "
+          import asyncio, os
+          from sqlalchemy.ext.asyncio import create_async_engine
+          from sqlmodel import SQLModel
+          import app.models  # ensure models are registered
+          async def main():
+              engine = create_async_engine(os.environ['DATABASE_URL'])
+              async with engine.begin() as conn:
+                  await conn.run_sync(SQLModel.metadata.create_all)
+          asyncio.run(main())
+          "
+
+      - name: Start API
+        working-directory: apps/api
+        run: |
+          nohup uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/api.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8000/openapi.json -o /dev/null; then
+              echo "API ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API failed to start; tail of log:"
+          tail -100 /tmp/api.log
+          exit 1
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Build web
+        working-directory: apps/web
+        run: npm run build
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('apps/web/package-lock.json') }}
+
+      - name: Install Chromium
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Start preview server
+        working-directory: apps/web
+        run: |
+          nohup npm run preview > /tmp/web.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:3000 -o /dev/null; then
+              echo "Web ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Web failed to start; tail of log:"
+          tail -100 /tmp/web.log
+          exit 1
+
+      - name: Run Playwright smoke
+        working-directory: apps/web
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7

@@ -142,3 +142,45 @@ async def get_me(
 async def logout(response: Response) -> dict:
     clear_session_cookie(response)
     return {"message": "Logged out"}
+
+
+class TestLoginIn(BaseModel):
+    email: str
+    name: str = "Test User"
+
+
+@router.post("/_test/login", include_in_schema=False)
+async def test_login(
+    body: TestLoginIn,
+    response: Response,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> UserPublic:
+    # Test-only shortcut for Playwright/E2E. Refuse to load in production.
+    if settings.environment == "production":
+        raise HTTPException(status_code=404, detail="Not found")
+
+    stmt = select(User).where(User.provider == "test", User.email == body.email)
+    result = await session.exec(stmt)
+    user = result.first()
+
+    if user is None:
+        user = User(
+            id=new_uuid7(),
+            email=body.email,
+            name=body.name,
+            avatar_url=None,
+            provider="test",
+            provider_id=body.email,
+        )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+
+    set_session_cookie(response, user.id)
+    return UserPublic(
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        avatar_url=user.avatar_url,
+        provider=user.provider,
+    )
