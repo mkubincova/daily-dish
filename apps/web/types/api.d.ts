@@ -386,9 +386,7 @@ export interface components {
              * Steps
              * @default []
              */
-            steps: {
-                [key: string]: unknown;
-            }[];
+            steps: components["schemas"]["RecipeStep"][];
             /**
              * Is Public
              * @default true
@@ -462,9 +460,7 @@ export interface components {
             /** Cook Time Minutes */
             cook_time_minutes: number | null;
             /** Steps */
-            steps: {
-                [key: string]: unknown;
-            }[];
+            steps: components["schemas"]["RecipeStep"][];
             /** Is Public */
             is_public: boolean;
             /**
@@ -506,9 +502,7 @@ export interface components {
             /** Cook Time Minutes */
             cook_time_minutes?: number | null;
             /** Steps */
-            steps?: {
-                [key: string]: unknown;
-            }[] | null;
+            steps?: components["schemas"]["RecipeStep"][] | null;
             /** Is Public */
             is_public?: boolean | null;
             /** Ingredients */
@@ -517,6 +511,13 @@ export interface components {
             category_item_ids?: string[] | null;
             /** Tag Ids */
             tag_ids?: string[] | null;
+        };
+        /** RecipeStep */
+        RecipeStep: {
+            /** Position */
+            position: number;
+            /** Text */
+            text: string;
         };
         /** SignedUploadParams */
         SignedUploadParams: {

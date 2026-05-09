@@ -66,9 +66,6 @@ async function handleSubmit(data: RecipeFormSubmitData) {
 			source_url: data.source_url || null,
 			image_url: data.image_url || null,
 			image_public_id: data.image_public_id || null,
-			// Backend types steps as list[dict[str, Any]]; cast through the open
-			// shape until the backend is tightened to a typed RecipeStep model.
-			steps: data.steps as unknown as { [x: string]: unknown }[],
 		},
 	});
 	if (apiError) {

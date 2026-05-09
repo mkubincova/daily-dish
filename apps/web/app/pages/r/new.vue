@@ -16,7 +16,6 @@ async function handleSubmit(data: RecipeFormSubmitData) {
 			source_url: data.source_url || null,
 			image_url: data.image_url || null,
 			image_public_id: data.image_public_id || null,
-			steps: data.steps as unknown as { [x: string]: unknown }[],
 		},
 	});
 	if (apiError || !recipe) {

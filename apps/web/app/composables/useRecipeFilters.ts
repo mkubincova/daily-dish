@@ -77,21 +77,6 @@ export function useRecipeFilters() {
 		router.push({ query });
 	}
 
-	function toApiParams(): Record<string, string | string[]> {
-		const f = filters.value;
-		const params: Record<string, string | string[]> = {};
-		if (f.categoryItems.length > 0) {
-			params.category_items = f.categoryItems.map((g) => g.join(","));
-		}
-		if (f.tags.length > 0) {
-			params.tags = f.tags;
-		}
-		if (f.status !== "all") {
-			params.status = f.status;
-		}
-		return params;
-	}
-
 	function clearFilters() {
 		const query = { ...route.query };
 		delete query.category_items;
@@ -105,7 +90,6 @@ export function useRecipeFilters() {
 		toggleCategoryItem,
 		toggleTag,
 		setStatus,
-		toApiParams,
 		clearFilters,
 	};
 }

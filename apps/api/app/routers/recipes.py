@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -31,6 +31,11 @@ class IngredientIn(BaseModel):
     notes: str | None = None
 
 
+class RecipeStep(BaseModel):
+    position: int
+    text: str
+
+
 class RecipeIn(BaseModel):
     title: str
     description: str | None = None
@@ -40,7 +45,7 @@ class RecipeIn(BaseModel):
     servings: int | None = None
     prep_time_minutes: int | None = None
     cook_time_minutes: int | None = None
-    steps: list[dict[str, Any]] = []
+    steps: list[RecipeStep] = []
     is_public: bool = True
     ingredients: list[IngredientIn] = []
     category_item_ids: list[str] = []
@@ -56,7 +61,7 @@ class RecipePatch(BaseModel):
     servings: int | None = None
     prep_time_minutes: int | None = None
     cook_time_minutes: int | None = None
-    steps: list[dict[str, Any]] | None = None
+    steps: list[RecipeStep] | None = None
     is_public: bool | None = None
     ingredients: list[IngredientIn] | None = None
     category_item_ids: list[str] | None = None
@@ -99,7 +104,7 @@ class RecipeOut(BaseModel):
     servings: int | None
     prep_time_minutes: int | None
     cook_time_minutes: int | None
-    steps: list[dict[str, Any]]
+    steps: list[RecipeStep]
     is_public: bool
     created_at: datetime
     updated_at: datetime
@@ -163,7 +168,7 @@ def _recipe_out(
         servings=recipe.servings,
         prep_time_minutes=recipe.prep_time_minutes,
         cook_time_minutes=recipe.cook_time_minutes,
-        steps=recipe.steps or [],
+        steps=[RecipeStep.model_validate(s) for s in (recipe.steps or [])],
         is_public=recipe.is_public,
         created_at=recipe.created_at,
         updated_at=recipe.updated_at,
@@ -312,7 +317,7 @@ async def create_recipe(
         servings=body.servings,
         prep_time_minutes=body.prep_time_minutes,
         cook_time_minutes=body.cook_time_minutes,
-        steps=body.steps,
+        steps=[s.model_dump() for s in body.steps],
         is_public=body.is_public,
     )
     session.add(recipe)
